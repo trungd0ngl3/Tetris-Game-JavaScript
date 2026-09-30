@@ -1,234 +1,255 @@
-    const PIECES = {
-        I: [
-            [0, 0, 0, 0],
-            [1, 1, 1, 1],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]
-        ],
+const PIECES = {
+    I: [
+        [0, 0, 0, 0],
+        [1, 1, 1, 1],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+    ],
 
-        O: [
-            [1, 1],
-            [1, 1]
-        ],
+    O: [
+        [1, 1],
+        [1, 1]
+    ],
 
-        T: [
-            [0, 1, 0],
-            [1, 1, 1],
-            [0, 0, 0]
-        ],
+    T: [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 0, 0]
+    ],
 
-        S: [
-            [0, 1, 1],
-            [1, 1, 0],
-            [0, 0, 0]
-        ],
+    S: [
+        [0, 1, 1],
+        [1, 1, 0],
+        [0, 0, 0]
+    ],
 
-        Z: [
-            [1, 1, 0],
-            [0, 1, 1],
-            [0, 0, 0]  
-        ],
+    Z: [
+        [1, 1, 0],
+        [0, 1, 1],
+        [0, 0, 0]  
+    ],
 
-        L: [
-            [1, 0, 0],
-            [1, 1, 1],
-            [0, 0, 0]
-        ],
+    L: [
+        [1, 0, 0],
+        [1, 1, 1],
+        [0, 0, 0]
+    ],
 
-        J: [
-            [0, 0, 1],
-            [1, 1, 1],
-            [0, 0, 0]
-        ]
-    };
+    J: [
+        [0, 0, 1],
+        [1, 1, 1],
+        [0, 0, 0]
+    ]
+};
 
-    const COLORS = {
-        I: 'cyan',
-        O: 'yellow',
-        T: 'purple',
-        S: 'green',
-        Z: 'red',
-        J: 'blue',
-        L: 'orange'
-    };
+const COLORS = {
+    I: 'cyan',
+    O: 'yellow',
+    T: 'purple',
+    S: 'green',
+    Z: 'red',
+    J: 'blue',
+    L: 'orange'
+};
 
-    const ROWS = 20;
-    const COLS = 10;
+const ROWS = 20;
+const COLS = 10;
 
-    const gameBoard = document.getElementById('game-board');
+const gameBoard = document.getElementById('game-board');
 
-    let currentPiece = createRandomPiece();
-    let board = Array.from(
-        { length: ROWS },
-        () => Array(COLS).fill(0)
-    );
+let currentPiece = createRandomPiece();
+let board = Array.from({ length: ROWS },() => Array(COLS).fill(0));
+let score = 0;
+let gameInterval = null;
 
-    let gameInterval = null;
-
-    function createGameBoard() {
-        gameBoard.innerHTML = '';
-        for(let r = 0; r < ROWS; r++){
-            const tr = document.createElement('tr')
-            for(let c = 0; c < COLS; c++){
-                const td = document.createElement('td')
-                td.setAttribute('data-row', r);
-                td.setAttribute('data-col', c);
-                tr.appendChild(td)
-            }
-            gameBoard.appendChild(tr)   
+function createGameBoard() {
+    gameBoard.innerHTML = '';
+    for(let r = 0; r < ROWS; r++){
+        const tr = document.createElement('tr')
+        for(let c = 0; c < COLS; c++){
+            const td = document.createElement('td')
+            td.setAttribute('data-row', r);
+            td.setAttribute('data-col', c);
+            tr.appendChild(td)
         }
+        gameBoard.appendChild(tr)   
     }
-    createGameBoard();
+}
+createGameBoard();
 
-    function createRandomPiece() {
-        const pieceTypes = Object.keys(PIECES);
-        const randomType = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
-        return {
-            type: randomType,
-            shape: PIECES[randomType].map(row => [...row]),
-            color: COLORS[randomType],
-            row: randomType === 'I' ? -1 : 0,
-            col: Math.floor(COLS / 2) - 1
-        };  
-    }
+function createRandomPiece() {
+    const pieceTypes = Object.keys(PIECES);
+    const randomType = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
+    return {
+        type: randomType,
+        shape: PIECES[randomType].map(row => [...row]),
+        color: COLORS[randomType],
+        row: randomType === 'I' ? -1 : 0,
+        col: Math.floor(COLS / 2) - 1
+    };  
+}
 
-    function renderBoard() {
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                const cell = gameBoard.rows[r].cells[c];
-                cell.className = '';
-                cell.style.backgroundColor = '';
+function renderBoard() {
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const cell = gameBoard.rows[r].cells[c];
+            cell.className = '';
+            cell.style.backgroundColor = '';
 
-                const cellValue = board[r][c];
-                if (cellValue !== 0) {
-                    cell.classList.add('filled');
-                    cell.style.backgroundColor = COLORS[cellValue];
-                }
-            }
-        }
-    }
-    function renderPiece(piece) {
-        for (let r = 0; r < piece.shape.length; r++) {
-            for (let c = 0; c < piece.shape[r].length; c++) {
-                if (piece.shape[r][c] === 0) {
-                    continue;
-                }
-                const boardRow = piece.row + r;
-                const boardCol = piece.col + c;
-                if (
-                    boardRow < 0 ||
-                    boardRow >= ROWS ||
-                    boardCol < 0 ||
-                    boardCol >= COLS
-                ) {
-                    continue;
-                }
-                const cell = gameBoard.rows[boardRow].cells[boardCol];
-
+            const cellValue = board[r][c];
+            if (cellValue !== 0) {
                 cell.classList.add('filled');
-                cell.style.backgroundColor = piece.color;
+                cell.style.backgroundColor = COLORS[cellValue];
             }
         }
     }
-    function render() {
-        renderBoard();
-        renderPiece(currentPiece);
-    }
-    function canMove(piece, newRow, newCol) {
-        for (let r = 0; r < piece.shape.length; r++) {
-            for (let c = 0; c < piece.shape[r].length; c++) {
-                if (piece.shape[r][c] === 0) {
-                    continue;
-                }
-
-                const boardRow = newRow + r;
-                const boardCol = newCol + c;
-
-                if (
-                    boardRow < 0 ||
-                    boardRow >= ROWS ||
-                    boardCol < 0 ||
-                    boardCol >= COLS
-                ) {
-                    return false;
-                }
-
-                if (board[boardRow][boardCol] !== 0) {
-                    return false;
-                }
+}
+function renderPiece(piece) {
+    for (let r = 0; r < piece.shape.length; r++) {
+        for (let c = 0; c < piece.shape[r].length; c++) {
+            if (piece.shape[r][c] === 0) {
+                continue;
             }
-        }
-        return true;
-    }
+            const boardRow = piece.row + r;
+            const boardCol = piece.col + c;
+            if (
+                boardRow < 0 ||
+                boardRow >= ROWS ||
+                boardCol < 0 ||
+                boardCol >= COLS
+            ) {
+                continue;
+            }
+            const cell = gameBoard.rows[boardRow].cells[boardCol];
 
-    function moveLeft() {
-        if (canMove(currentPiece, currentPiece.row, currentPiece.col - 1)) {
-            currentPiece.col--;
-            render();
-        }
-    }
-
-    function moveRight() {
-        if (canMove(currentPiece, currentPiece.row, currentPiece.col + 1)) {
-            currentPiece.col++;
-            render();
-        }
-    }
-
-    function moveDown() {
-        if (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
-            currentPiece.row++;
-            render();
-        } else {
-            placePiece();
-            currentPiece = createRandomPiece();
-            render();
+            cell.classList.add('filled');
+            cell.style.backgroundColor = piece.color;
         }
     }
+}
+function render() {
+    renderBoard();
+    renderPiece(currentPiece);
+}
+function canMove(piece, newRow, newCol) {
+    for (let r = 0; r < piece.shape.length; r++) {
+        for (let c = 0; c < piece.shape[r].length; c++) {
+            if (piece.shape[r][c] === 0) {
+                continue;
+            }
 
-    function placePiece() {
-        for (let r = 0; r < currentPiece.shape.length; r++) {
-            for (let c = 0; c < currentPiece.shape[r].length; c++) {
-                if (currentPiece.shape[r][c] === 0) {
-                    continue;
-                }
-                const boardRow = currentPiece.row + r;
-                const boardCol = currentPiece.col + c;
-                board[boardRow][boardCol] = currentPiece.type;
+            const boardRow = newRow + r;
+            const boardCol = newCol + c;
+
+            if (
+                boardRow < 0 ||
+                boardRow >= ROWS ||
+                boardCol < 0 ||
+                boardCol >= COLS
+            ) {
+                return false;
+            }
+
+            if (board[boardRow][boardCol] !== 0) {
+                return false;
             }
         }
     }
+    return true;
+}
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowLeft') {
-            moveLeft();
-        }
-
-        if (event.key === 'ArrowRight') {
-            moveRight();
-        }
-
-        if (event.key === 'ArrowDown') {
-            moveDown();
-        }
-        if (event.key === ' ') {
-            event.preventDefault();
-            while (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
-                currentPiece.row++;
-            }
-            placePiece();
-            currentPiece = createRandomPiece();
-            render();
-        }
-
-    });
-
-    function startGame() {
+function moveLeft() {
+    if (canMove(currentPiece, currentPiece.row, currentPiece.col - 1)) {
+        currentPiece.col--;
         render();
-        if (gameInterval) {
-            clearInterval(gameInterval);
-        }   
-        gameInterval = setInterval( moveDown,1000);
+    }
+}
+
+function moveRight() {
+    if (canMove(currentPiece, currentPiece.row, currentPiece.col + 1)) {
+        currentPiece.col++;
+        render();
+    }
+}
+
+function moveDown() {
+    if (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
+        currentPiece.row++;
+        render();
+    } else {
+        placePiece();
+        const linesCleared = clearLines();
+        updateScore(linesCleared);
+        currentPiece = createRandomPiece();
+        render();
+    }
+}
+
+function placePiece() {
+    for (let r = 0; r < currentPiece.shape.length; r++) {
+        for (let c = 0; c < currentPiece.shape[r].length; c++) {
+            if (currentPiece.shape[r][c] === 0) {
+                continue;
+            }
+            const boardRow = currentPiece.row + r;
+            const boardCol = currentPiece.col + c;
+            board[boardRow][boardCol] = currentPiece.type;
+        }
+    }
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') {
+        moveLeft();
     }
 
-    startGame();
+    if (event.key === 'ArrowRight') {
+        moveRight();
+    }
+
+    if (event.key === 'ArrowDown') {
+        moveDown();
+    }
+    if (event.key === ' ') {
+        event.preventDefault();
+        while (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
+            currentPiece.row++;
+        }
+        placePiece();
+        const linesCleared = clearLines();
+        updateScore(linesCleared);
+        currentPiece = createRandomPiece();
+        render();
+    }
+
+});
+
+function clearLines() {
+    let linesCleared = 0;
+    for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r].every(cell => cell !== 0)) {
+            board.splice(r, 1);
+            board.unshift(Array(COLS).fill(0));
+            linesCleared++;
+            r++;
+        }
+    }
+    return linesCleared;
+}
+
+function updateScore(linesCleared) {
+    const points = linesCleared * 100;
+    score += points;
+    document.getElementById('score').textContent = `Score: ${score}`;
+}
+
+
+function startGame() {
+    render();
+    if (gameInterval) {
+        clearInterval(gameInterval);
+    }   
+    gameInterval = setInterval( moveDown,1000);
+}
+
+startGame();
