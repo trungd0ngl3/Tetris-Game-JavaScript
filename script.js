@@ -60,6 +60,9 @@ const gameBoard = document.getElementById('game-board');
 let currentPiece = createRandomPiece();
 let board = Array.from({ length: ROWS },() => Array(COLS).fill(0));
 let score = 0;
+let totalLinesCleared = 0;
+let level = 1;
+let gravity = 1000; // Gravity in milliseconds
 let gameInterval = null;
 
 function createGameBoard() {
@@ -240,16 +243,30 @@ function clearLines() {
 function updateScore(linesCleared) {
     const points = linesCleared * 100;
     score += points;
+
+    totalLinesCleared += linesCleared;
+
+    const newLevel = Math.floor(totalLinesCleared / 10) + 1;
+
+    if (newLevel !== level) {
+        level = newLevel;
+        restartGameLoop();
+    }
     document.getElementById('score').textContent = `Score: ${score}`;
+    document.getElementById('level').textContent = `Level: ${level}`;
 }
 
 
 function startGame() {
     render();
+    restartGameLoop();
+}
+
+function restartGameLoop() {
     if (gameInterval) {
         clearInterval(gameInterval);
-    }   
-    gameInterval = setInterval( moveDown,1000);
+    }
+    gameInterval = setInterval(moveDown, gravity / level);
 }
 
 startGame();
