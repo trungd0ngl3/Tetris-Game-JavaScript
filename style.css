@@ -4,8 +4,17 @@ body{
     align-items: center;
 }
 
-#game-board td{
-    width: 20px;
-    height: 20px;
-    background-color: #8b8b8b;
+#game-board {
+    border-collapse: collapse;
+}
+
+#game-board td {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #333;
+    padding: 0;
+}
+
+#game-board td.filled {
+    background-color: red;
 }
