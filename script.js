@@ -134,10 +134,10 @@ function render() {
     renderBoard();
     renderPiece(currentPiece);
 }
-function canMove(piece, newRow, newCol) {
-    for (let r = 0; r < piece.shape.length; r++) {
-        for (let c = 0; c < piece.shape[r].length; c++) {
-            if (piece.shape[r][c] === 0) {
+function canMove(piece, newRow, newCol, shape = piece.shape) {
+    for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+            if (shape[r][c] === 0) {
                 continue;
             }
 
@@ -224,7 +224,10 @@ document.addEventListener('keydown', (event) => {
         currentPiece = createRandomPiece();
         render();
     }
-
+    if (event.key === 'ArrowUp') {
+        rotatePiece(currentPiece);
+        render();
+    }
 });
 
 function clearLines() {
@@ -256,6 +259,27 @@ function updateScore(linesCleared) {
     document.getElementById('level').textContent = `Level: ${level}`;
 }
 
+function rotatePiece(piece) {
+    const newShape = piece.shape[0].map((_, index) =>
+        piece.shape.map(row => row[index]).reverse()
+    );
+    if (canMove(piece, piece.row, piece.col, newShape)) {
+        piece.shape = newShape;
+    }else {
+        if (canMove(piece, piece.row, piece.col - 1, newShape)) {
+            piece.col--;
+            piece.shape = newShape;
+        } else if (canMove(piece, piece.row, piece.col + 1, newShape)) {
+            piece.col++;
+            piece.shape = newShape;
+        }
+    }
+}
+
+function gameOver() {
+    clearInterval(gameInterval);
+    alert('Game Over! Your score: ' + score);
+}
 
 function startGame() {
     render();
@@ -268,5 +292,6 @@ function restartGameLoop() {
     }
     gameInterval = setInterval(moveDown, gravity / level);
 }
+
 
 startGame();
