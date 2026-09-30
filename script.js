@@ -64,6 +64,7 @@ let totalLinesCleared = 0;
 let level = 1;
 let gravity = 1000; // Gravity in milliseconds
 let gameInterval = null;
+let gameOverFlag = false;
 
 function createGameBoard() {
     gameBoard.innerHTML = '';
@@ -130,6 +131,19 @@ function renderPiece(piece) {
         }
     }
 }
+
+function spawnPiece() {
+    const newPiece = createRandomPiece();
+    if (!canMove(newPiece, newPiece.row, newPiece.col)) {
+        gameOver();
+        return false;
+    }
+    else {
+        currentPiece = newPiece;
+        return true;
+    }
+}
+
 function render() {
     renderBoard();
     renderPiece(currentPiece);
@@ -183,7 +197,7 @@ function moveDown() {
         placePiece();
         const linesCleared = clearLines();
         updateScore(linesCleared);
-        currentPiece = createRandomPiece();
+        spawnPiece();
         render();
     }
 }
@@ -221,7 +235,7 @@ document.addEventListener('keydown', (event) => {
         placePiece();
         const linesCleared = clearLines();
         updateScore(linesCleared);
-        currentPiece = createRandomPiece();
+        spawnPiece();
         render();
     }
     if (event.key === 'ArrowUp') {
@@ -279,6 +293,7 @@ function rotatePiece(piece) {
 function gameOver() {
     clearInterval(gameInterval);
     alert('Game Over! Your score: ' + score);
+    gameOverFlag = true;
 }
 
 function startGame() {
