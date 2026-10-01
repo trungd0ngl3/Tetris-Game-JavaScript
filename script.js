@@ -57,6 +57,7 @@ const COLS = 10;
 
 const gameBoard = document.getElementById('game-board');
 const nextBoard = document.getElementById('next-board');
+const holdBoard = document.getElementById('hold-board');
 
 let currentPiece = createRandomPiece();
 let nextPiece = createRandomPiece();
@@ -95,6 +96,21 @@ function createNextBoard() {
         }
 
         nextBoard.appendChild(tr);
+    }
+}
+
+function createHoldBoard() {
+    holdBoard.innerHTML = '';
+
+    for (let r = 0; r < 4; r++) {
+        const tr = document.createElement('tr');
+
+        for (let c = 0; c < 4; c++) {
+            const td = document.createElement('td');
+            tr.appendChild(td);
+        }
+
+        holdBoard.appendChild(tr);
     }
 }
 
@@ -149,6 +165,31 @@ function renderNextPiece() {
         }
     }
 }
+function renderHoldPiece() {
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const cell = holdBoard.rows[r].cells[c];
+
+            cell.className = '';
+            cell.style.backgroundColor = '';
+        }
+    }
+    if (holdPiece === null) {
+        return;
+    }
+    for (let r = 0; r < holdPiece.shape.length; r++) {
+        for (let c = 0; c < holdPiece.shape[r].length; c++) {
+            if (holdPiece.shape[r][c] === 0) {
+                continue;
+            }
+
+            const cell = holdBoard.rows[r].cells[c];
+
+            cell.classList.add('filled');
+            cell.style.backgroundColor = holdPiece.color;
+        }
+    }
+}
 function renderPiece(piece) {
     for (let r = 0; r < piece.shape.length; r++) {
         for (let c = 0; c < piece.shape[r].length; c++) {
@@ -190,8 +231,10 @@ function spawnPiece() {
 function render() {
     renderBoard();
     renderNextPiece();
+    renderHoldPiece();
     renderPiece(currentPiece);
 }
+
 function canMove(piece, newRow, newCol, shape = piece.shape) {
     for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) { 
@@ -413,6 +456,7 @@ function resetGame() {
     restartGameLoop();
 }
 
+createHoldBoard();
 createNextBoard();
 createGameBoard();
 startGame();

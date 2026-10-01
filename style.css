@@ -10,6 +10,7 @@ body {
     align-items: flex-start;
 }
 
+#hold-board,
 #game-board,
 #next-board {
     border-collapse: collapse;
@@ -30,11 +31,12 @@ body {
     text-align: center;
 }
 
+#hold-board,
 #next-board {
     margin-top: 10px;
     border: 1px solid #333;
 }
-
+#hold-board td,
 #next-board td {
     width: 25px;
     height: 25px;
