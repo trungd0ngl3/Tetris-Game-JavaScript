@@ -218,19 +218,23 @@ function placePiece() {
 }
 
 document.addEventListener('keydown', (event) => {
+    if(event.key === 'r' || event.key === 'R') {
+        resetGame();
+    }
+
     if(gameOverFlag) {
         return;
     }
 
-    if (event.key === 'ArrowLeft') {
+    if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
         moveLeft();
     }
 
-    if (event.key === 'ArrowRight') {
+    if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
         moveRight();
     }
 
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown'|| event.key === 's' || event.key === 'S') {
         moveDown();
     }
     if (event.key === ' ') {
@@ -245,7 +249,8 @@ document.addEventListener('keydown', (event) => {
             render();
         }
     }
-    if (event.key === 'ArrowUp') {
+
+    if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
         rotatePiece(currentPiece);
         render();
     }
@@ -315,5 +320,15 @@ function restartGameLoop() {
     gameInterval = setInterval(moveDown, gravity / level);
 }
 
+function resetGame() {
+    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    score = 0;
+    totalLinesCleared = 0;
+    level = 1;
+    gameOverFlag = false;
+    currentPiece = createRandomPiece();
+    render();
+    restartGameLoop();
+}
 
 startGame();
