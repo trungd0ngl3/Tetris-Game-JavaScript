@@ -58,6 +58,7 @@ const COLS = 10;
 const gameBoard = document.getElementById('game-board');
 
 let currentPiece = createRandomPiece();
+let nextPiece = createRandomPiece();
 let board = Array.from({ length: ROWS },() => Array(COLS).fill(0));
 let score = 0;
 let totalLinesCleared = 0;
@@ -133,7 +134,9 @@ function renderPiece(piece) {
 }
 
 function spawnPiece() {
-    const newPiece = createRandomPiece();
+    const newPiece = nextPiece;
+    nextPiece = createRandomPiece();
+
     if (!canMove(newPiece, newPiece.row, newPiece.col)) {
         gameOver();
         return false;
@@ -150,7 +153,7 @@ function render() {
 }
 function canMove(piece, newRow, newCol, shape = piece.shape) {
     for (let r = 0; r < shape.length; r++) {
-        for (let c = 0; c < shape[r].length; c++) {
+        for (let c = 0; c < shape[r].length; c++) { 
             if (shape[r][c] === 0) {
                 continue;
             }
@@ -190,6 +193,7 @@ function moveRight() {
 }
 
 function moveDown() {
+    
     if (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
         currentPiece.row++;
         render();
@@ -220,6 +224,7 @@ function placePiece() {
 document.addEventListener('keydown', (event) => {
     if(event.key === 'r' || event.key === 'R') {
         resetGame();
+        return;
     }
 
     if(gameOverFlag) {
@@ -327,6 +332,9 @@ function resetGame() {
     level = 1;
     gameOverFlag = false;
     currentPiece = createRandomPiece();
+    nextPiece = createRandomPiece();
+    document.getElementById('score').textContent = `Score: ${score}`;
+    document.getElementById('level').textContent = `Level: ${level}`;
     render();
     restartGameLoop();
 }
