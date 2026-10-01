@@ -67,6 +67,8 @@ let level = 1;
 let gravity = 1000; // Gravity in milliseconds
 let gameInterval = null;
 let gameOverFlag = false;
+let holdPiece = null;
+let canHold = true;
 
 function createGameBoard() {
     gameBoard.innerHTML = '';
@@ -232,7 +234,6 @@ function moveRight() {
 }
 
 function moveDown() {
-    
     if (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
         currentPiece.row++;
         render();
@@ -243,6 +244,7 @@ function moveDown() {
         if (!spawnPiece()) {
             return;
         }
+        canHold = true;
         render();
     }
 }
@@ -281,6 +283,12 @@ document.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowDown'|| event.key === 's' || event.key === 'S') {
         moveDown();
     }
+
+    if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+        rotatePiece(currentPiece);
+        render();
+    }
+    
     if (event.key === ' ') {
         event.preventDefault();
         while (canMove(currentPiece, currentPiece.row + 1, currentPiece.col)) {
@@ -290,14 +298,15 @@ document.addEventListener('keydown', (event) => {
         const linesCleared = clearLines();
         updateScore(linesCleared);
         if (spawnPiece()) {
+            canHold = true;
             render();
         }
     }
 
-    if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
-        rotatePiece(currentPiece);
-        render();
+    if (event.key === 'c' || event.key === 'C') {
+        holdCurrentPiece();
     }
+    
 });
 
 function clearLines() {
@@ -345,6 +354,32 @@ function rotatePiece(piece) {
         }
     }
 }
+
+function holdCurrentPiece() {
+    if (!canHold) {
+        return;
+    }
+
+    if (holdPiece === null) {
+        holdPiece = currentPiece;
+        if (!spawnPiece()) {
+            return;
+        }
+    } else {
+        const temp = currentPiece;
+
+        currentPiece = holdPiece;
+        holdPiece = temp;
+
+        currentPiece.row = currentPiece.type === 'I' ? -1 : 0;
+        currentPiece.col = Math.floor(COLS / 2) - 1;
+    }
+
+    canHold = false;
+    render();
+}
+
+// Game control functions
 
 function gameOver() {
     gameOverFlag = true;
