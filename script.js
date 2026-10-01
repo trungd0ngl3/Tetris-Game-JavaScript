@@ -413,7 +413,7 @@ function holdCurrentPiece() {
 
         currentPiece = holdPiece;
         holdPiece = temp;
-
+        resetPiecePosition(currentPiece);
         currentPiece.row = currentPiece.type === 'I' ? -1 : 0;
         currentPiece.col = Math.floor(COLS / 2) - 1;
     }
@@ -422,6 +422,11 @@ function holdCurrentPiece() {
     render();
 }
 
+function resetPiecePosition(piece) {
+    piece.shape = PIECES[piece.type].map(row => [...row]);
+    piece.row = piece.type === 'I' ? -1 : 0;
+    piece.col = Math.floor(COLS / 2) - 1;
+}
 // Game control functions
 
 function gameOver() {
