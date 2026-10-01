@@ -59,6 +59,7 @@ const gameBoard = document.getElementById('game-board');
 const nextBoard = document.getElementById('next-board');
 const holdBoard = document.getElementById('hold-board');
 
+let pieceBag = [];
 let currentPiece = createRandomPiece();
 let nextPiece = createRandomPiece();
 let board = Array.from({ length: ROWS },() => Array(COLS).fill(0));
@@ -115,8 +116,10 @@ function createHoldBoard() {
 }
 
 function createRandomPiece() {
-    const pieceTypes = Object.keys(PIECES);
-    const randomType = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
+    if (pieceBag.length === 0) {
+        refillPieceBag();
+    }
+    const randomType = pieceBag.pop();
     return {
         type: randomType,
         shape: PIECES[randomType].map(row => [...row]),
@@ -427,6 +430,14 @@ function resetPiecePosition(piece) {
     piece.row = piece.type === 'I' ? -1 : 0;
     piece.col = Math.floor(COLS / 2) - 1;
 }
+
+function refillPieceBag() {
+    pieceBag = Object.keys(PIECES);
+    for (let i = pieceBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pieceBag[i], pieceBag[j]] = [pieceBag[j], pieceBag[i]];
+    }
+}
 // Game control functions
 
 function gameOver() {
@@ -453,10 +464,11 @@ function resetGame() {
     totalLinesCleared = 0;
     level = 1;
     gameOverFlag = false;
-    currentPiece = createRandomPiece();
-    nextPiece = createRandomPiece();
     holdPiece = null;
     canHold = true;
+    pieceBag = [];
+    currentPiece = createRandomPiece();
+    nextPiece = createRandomPiece();
     document.getElementById('score').textContent = `Score: ${score}`;
     document.getElementById('level').textContent = `Level: ${level}`;
     render();
