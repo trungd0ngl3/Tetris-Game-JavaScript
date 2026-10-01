@@ -159,7 +159,7 @@ function canMove(piece, newRow, newCol, shape = piece.shape) {
             const boardCol = newCol + c;
 
             if (
-                boardRow < 0 ||
+                // boardRow < 0 ||
                 boardRow >= ROWS ||
                 boardCol < 0 ||
                 boardCol >= COLS
@@ -167,7 +167,7 @@ function canMove(piece, newRow, newCol, shape = piece.shape) {
                 return false;
             }
 
-            if (board[boardRow][boardCol] !== 0) {
+            if (boardRow >= 0 && board[boardRow][boardCol] !== 0) {
                 return false;
             }
         }
@@ -197,7 +197,9 @@ function moveDown() {
         placePiece();
         const linesCleared = clearLines();
         updateScore(linesCleared);
-        spawnPiece();
+        if (!spawnPiece()) {
+            return;
+        }
         render();
     }
 }
@@ -216,6 +218,10 @@ function placePiece() {
 }
 
 document.addEventListener('keydown', (event) => {
+    if(gameOverFlag) {
+        return;
+    }
+
     if (event.key === 'ArrowLeft') {
         moveLeft();
     }
@@ -235,8 +241,9 @@ document.addEventListener('keydown', (event) => {
         placePiece();
         const linesCleared = clearLines();
         updateScore(linesCleared);
-        spawnPiece();
-        render();
+        if (spawnPiece()) {
+            render();
+        }
     }
     if (event.key === 'ArrowUp') {
         rotatePiece(currentPiece);
@@ -291,9 +298,9 @@ function rotatePiece(piece) {
 }
 
 function gameOver() {
+    gameOverFlag = true;
     clearInterval(gameInterval);
     alert('Game Over! Your score: ' + score);
-    gameOverFlag = true;
 }
 
 function startGame() {
