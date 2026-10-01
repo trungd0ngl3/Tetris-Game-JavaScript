@@ -1,10 +1,17 @@
-body{
+body {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-#game-board {
+#game-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+#game-board,
+#next-board {
     border-collapse: collapse;
 }
 
@@ -17,4 +24,18 @@ body{
 
 #game-board td.filled {
     background-color: red;
+}
+
+#next-container {
+    text-align: center;
+}
+
+#next-board {
+    margin-top: 10px;
+}
+
+#next-board td {
+    width: 25px;
+    height: 25px;
+    padding: 0;
 }

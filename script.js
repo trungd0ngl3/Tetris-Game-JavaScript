@@ -56,6 +56,7 @@ const ROWS = 20;
 const COLS = 10;
 
 const gameBoard = document.getElementById('game-board');
+const nextBoard = document.getElementById('next-board');
 
 let currentPiece = createRandomPiece();
 let nextPiece = createRandomPiece();
@@ -80,7 +81,20 @@ function createGameBoard() {
         gameBoard.appendChild(tr)   
     }
 }
-createGameBoard();
+function createNextBoard() {
+    nextBoard.innerHTML = '';
+
+    for (let r = 0; r < 4; r++) {
+        const tr = document.createElement('tr');
+
+        for (let c = 0; c < 4; c++) {
+            const td = document.createElement('td');
+            tr.appendChild(td);
+        }
+
+        nextBoard.appendChild(tr);
+    }
+}
 
 function createRandomPiece() {
     const pieceTypes = Object.keys(PIECES);
@@ -106,6 +120,30 @@ function renderBoard() {
                 cell.classList.add('filled');
                 cell.style.backgroundColor = COLORS[cellValue];
             }
+        }
+    }
+}
+
+function renderNextPiece() {
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const cell = nextBoard.rows[r].cells[c];
+
+            cell.className = '';
+            cell.style.backgroundColor = '';
+        }
+    }
+
+    for (let r = 0; r < nextPiece.shape.length; r++) {
+        for (let c = 0; c < nextPiece.shape[r].length; c++) {
+            if (nextPiece.shape[r][c] === 0) {
+                continue;
+            }
+
+            const cell = nextBoard.rows[r].cells[c];
+
+            cell.classList.add('filled');
+            cell.style.backgroundColor = nextPiece.color;
         }
     }
 }
@@ -149,6 +187,7 @@ function spawnPiece() {
 
 function render() {
     renderBoard();
+    renderNextPiece();
     renderPiece(currentPiece);
 }
 function canMove(piece, newRow, newCol, shape = piece.shape) {
@@ -339,4 +378,6 @@ function resetGame() {
     restartGameLoop();
 }
 
+createNextBoard();
+createGameBoard();
 startGame();
