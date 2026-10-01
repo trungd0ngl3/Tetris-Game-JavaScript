@@ -450,6 +450,8 @@ function resetGame() {
     gameOverFlag = false;
     currentPiece = createRandomPiece();
     nextPiece = createRandomPiece();
+    holdPiece = null;
+    canHold = true;
     document.getElementById('score').textContent = `Score: ${score}`;
     document.getElementById('level').textContent = `Level: ${level}`;
     render();
