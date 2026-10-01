@@ -402,10 +402,7 @@ function rotatePiece(piece) {
 }
 
 function holdCurrentPiece() {
-    if (!canHold) {
-        return;
-    }
-
+    if (!canHold) {return;}
     if (holdPiece === null) {
         holdPiece = currentPiece;
         if (!spawnPiece()) {
@@ -413,14 +410,10 @@ function holdCurrentPiece() {
         }
     } else {
         const temp = currentPiece;
-
         currentPiece = holdPiece;
         holdPiece = temp;
         resetPiecePosition(currentPiece);
-        currentPiece.row = currentPiece.type === 'I' ? -1 : 0;
-        currentPiece.col = Math.floor(COLS / 2) - 1;
     }
-
     canHold = false;
     render();
 }
