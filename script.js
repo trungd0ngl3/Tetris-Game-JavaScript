@@ -390,12 +390,21 @@ function updateScore(linesCleared) {
 }
 
 function rotatePiece(piece) {
-    const newShape = piece.shape[0].map((_, index) =>
-        piece.shape.map(row => row[index]).reverse()
-    );
+    const newShape = new Array(piece.shape[0].length);
+
+    for (let c = 0; c < piece.shape[0].length; c++) {
+        newShape[c] = new Array(piece.shape.length);
+    }
+
+    for(let r = 0; r < piece.shape.length; r++) {
+        for(let c = 0; c < piece.shape[r].length; c++) {
+            newShape[c][piece.shape.length - 1 - r] = piece.shape[r][c];
+        }
+    }
+    
     if (canMove(piece, piece.row, piece.col, newShape)) {
         piece.shape = newShape;
-    }else {
+    } else {
         if (canMove(piece, piece.row, piece.col - 1, newShape)) {
             piece.col--;
             piece.shape = newShape;
