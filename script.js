@@ -303,6 +303,11 @@ function placePiece() {
             }
             const boardRow = currentPiece.row + r;
             const boardCol = currentPiece.col + c;
+
+            if(boardRow < 0) {
+                continue;
+            }
+            
             board[boardRow][boardCol] = currentPiece.type;
         }
     }
