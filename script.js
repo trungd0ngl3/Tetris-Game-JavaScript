@@ -510,11 +510,11 @@ updateGameUI(gameState);
 setupUIEvents({
     onStart: () => {
         startGame();
-    },
-    onGameOverMainMenu: () => {
-        resetGame();
-        gameState = GAME_STATES.READY;
         updateGameUI(gameState);
     },
-    
+    onGameOverMainMenu: () => {
+        clearInterval(gameInterval);
+        gameState = GAME_STATES.READY;
+        updateGameUI(gameState);
+    }
 });

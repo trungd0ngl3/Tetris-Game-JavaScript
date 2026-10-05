@@ -8,6 +8,7 @@ const resumeButton = document.getElementById("resume-button");
 const restartButton = document.getElementById("restart-button");
 const mainMenuButton = document.getElementById("main-menu-button");
 const retryButton = document.getElementById("retry-button");
+const gameOverMainMenuButton = document.getElementById("game-over-main-menu-button");
 
 function updateGameUI(gameState) {
     mainMenu.style.display = "none";
@@ -15,30 +16,38 @@ function updateGameUI(gameState) {
     pauseMenu.style.display = "none";
     gameOverMenu.style.display = "none";
     console.log("Updating UI for game state:", gameState);
-    if (gameState === "READY") {
+
+    if (gameState === "ready") {
         mainMenu.style.display = "flex";
     }
 
-    if (gameState === "PLAYING") {
+    if (gameState === "playing") {
         game.style.display = "flex";
     }
 
-    if (gameState === "PAUSED") {
+    if (gameState === "paused") {
         game.style.display = "flex";
         pauseMenu.style.display = "flex";
     }
 
-    if (gameState === "GAME_OVER") {
+    if (gameState === "game_over") {
         game.style.display = "flex";
         gameOverMenu.style.display = "flex";
     }
 }
 
-function setupUIEvents({ onStart, onResume, onRestart, onMainMenu, onRetry, onGameOverMainMenu }) { 
+function setupUIEvents({
+    onStart,
+    onResume,
+    onRestart,
+    onMainMenu,
+    onRetry,
+    onGameOverMainMenu
+}) {
     startButton.addEventListener("click", onStart);
     resumeButton.addEventListener("click", onResume);
     restartButton.addEventListener("click", onRestart);
     mainMenuButton.addEventListener("click", onMainMenu);
     retryButton.addEventListener("click", onRetry);
-    gameOverMenu.addEventListener( "click", onGameOverMainMenu ); 
+    gameOverMainMenuButton.addEventListener("click", onGameOverMainMenu);
 }
