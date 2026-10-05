@@ -10,6 +10,18 @@ body {
     align-items: flex-start;
 }
 
+#game {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+}
+
+#game-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 #hold-board,
 #game-board,
 #next-board {
@@ -27,10 +39,6 @@ body {
     background-color: red;
 }
 
-#next-container {
-    text-align: center;
-}
-
 #hold-board,
 #next-board {
     margin-top: 10px;
@@ -41,4 +49,22 @@ body {
     width: 25px;
     height: 25px;
     padding: 0;
+}
+.menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu button {
+    width: 150px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+#main-menu,
+#pause-menu,
+#game-over-menu {
+    display: none;
 }

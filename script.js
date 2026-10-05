@@ -465,14 +465,19 @@ function gameOver() {
     gameState = GAME_STATES.GAME_OVER;
     clearInterval(gameInterval);
     alert('Game Over! Your score: ' + score);
+    updateGameUI(gameState);
 }
 
 function startGame() {
     gameState = GAME_STATES.PLAYING;
+    updateGameUI(gameState);
     render();
     restartGameLoop();
 }
-
+function pauseGame() {
+    gameState = GAME_STATES.PAUSED;
+    updateGameUI(gameState);
+}
 function restartGameLoop() {
     if (gameInterval) {
         clearInterval(gameInterval);
@@ -501,4 +506,15 @@ function resetGame() {
 createHoldBoard();
 createNextBoard();
 createGameBoard();
-startGame();
+updateGameUI(gameState);
+setupUIEvents({
+    onStart: () => {
+        startGame();
+    },
+    onGameOverMainMenu: () => {
+        resetGame();
+        gameState = GAME_STATES.READY;
+        updateGameUI(gameState);
+    },
+    
+});

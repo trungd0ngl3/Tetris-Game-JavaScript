@@ -6,25 +6,47 @@
     <title>Tetris Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="game-container">
-        <div id="game-info">
-            <div id="hold-container">
-                <div>Hold</div>
-                <table id="hold-board"></table>
-            </div>
-            <div id="next-container">
-                <div>Next</div>
-                <table id="next-board"></table>
-            </div>
-
-            <div id="score">Score: 0</div>
-            <div id="level">Level: 1</div>
+        <div id="main-menu" class="menu">
+            <h1>Tetris</h1>
+            <button id="start-button">Start</button>
         </div>
 
-        <table id="game-board"></table>
-    </div>
+        <div id="game">
+            <div id="game-info">
+                <div id="hold-container">
+                    <div>Hold</div>
+                    <table id="hold-board"></table>
+                </div>
+                <div id="next-container">
+                    <div>Next</div>
+                    <table id="next-board"></table>
+                </div>
+                <div id="score">Score: 0</div>
+                <div id="level">Level: 1</div>
+            </div>
+            <table id="game-board"></table>
+        </div>
+        
+        <div id="pause-menu" class="menu">
+            <h2>Paused</h2>
+            <button id="resume-button">Resume</button>
+            <button id="restart-button">Restart</button>
+            <button id="main-menu-button">Main Menu</button>
+        </div>
 
+        <div id="game-over-menu" class="menu">
+            <h2>Game Over</h2>
+            <div id="final-score">Score: 0</div>
+            <div id="final-level">Level: 1</div>
+            <button id="retry-button">Retry</button>
+            <button id="game-over-main-menu-button">Main Menu</button>
+        </div>
+
+    </div>
+    <script src="ui.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
