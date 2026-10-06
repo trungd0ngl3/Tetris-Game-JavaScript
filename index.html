@@ -6,30 +6,84 @@
     <title>Tetris Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
     <div id="game-container">
+
+        <!-- Main Menu -->
         <div id="main-menu" class="menu">
             <h1>Tetris</h1>
             <button id="start-button">Start</button>
         </div>
 
+
+        <!-- Game -->
         <div id="game">
-            <div id="game-info">
-                <div id="hold-container">
-                    <div>Hold</div>
+
+            <!-- Left Panel -->
+            <div id="left-panel">
+
+                <!-- Hold -->
+                <div id="hold-container" class="panel">
+                    <div class="panel-title">Hold</div>
                     <table id="hold-board"></table>
                 </div>
-                <div id="next-container">
-                    <div>Next</div>
+
+                <!-- Highscore -->
+                <div id="highscore-container" class="panel stat-panel">
+                    <div class="stat-label">Highscore</div>
+                    <div id="highscore" class="stat-value">0</div>
+                </div>
+
+                <!-- Stats -->
+                <div id="stats-container" class="panel">
+
+                    <div class="stat-group">
+                        <div class="stat-label">Level</div>
+                        <div id="level" class="stat-value">1</div>
+                    </div>
+
+                    <div class="stat-group">
+                        <div class="stat-label">Score</div>
+                        <div id="score" class="stat-value">0</div>
+                    </div>
+
+                    <div class="stat-group">
+                        <div class="stat-label">Lines</div>
+                        <div id="lines" class="stat-value">0</div>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Game Board -->
+            <div id="board-container">
+                <table id="game-board"></table>
+            </div>
+
+
+            <!-- Right Panel -->
+            <div id="right-panel">
+
+                <div id="next-container" class="panel">
+                    <div class="panel-title">Next</div>
                     <table id="next-board"></table>
                 </div>
-                <div id="score">Score: 0</div>
-                <div id="level">Level: 1</div>
+
             </div>
-            <table id="game-board"></table>
+
         </div>
-        
+
+
+        <!-- Pause Button -->
+        <button id="pause-game-button" aria-label="Pause">
+            <span></span>
+            <span></span>
+        </button>
+
+
+        <!-- Pause Menu -->
         <div id="pause-menu" class="menu">
             <h2>Paused</h2>
             <button id="resume-button">Resume</button>
@@ -37,15 +91,22 @@
             <button id="main-menu-button">Main Menu</button>
         </div>
 
+
+        <!-- Game Over -->
         <div id="game-over-menu" class="menu">
             <h2>Game Over</h2>
+
             <div id="final-score">Score: 0</div>
             <div id="final-level">Level: 1</div>
+
             <button id="retry-button">Retry</button>
-            <button id="game-over-main-menu-button">Main Menu</button>
+            <button id="game-over-main-menu-button">
+                Main Menu
+            </button>
         </div>
 
     </div>
+
     <script src="ui.js"></script>
     <script src="script.js"></script>
 </body>

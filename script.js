@@ -325,15 +325,16 @@ function placePiece() {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'r' || event.key === 'R') {
-        resetGame();
-        return;
-    }
-
     if (event.key === 'Escape') {
+        if (gameState === GAME_STATES.PAUSED) {
+            gameState = GAME_STATES.PLAYING;
+            updateGameUI(gameState);
+            restartGameLoop();
+        }
         if (gameState === GAME_STATES.PLAYING) {
             pauseGame();
         }
+        
         return;
     }
 
@@ -398,8 +399,9 @@ function updateScore(linesCleared) {
         level = newLevel;
         restartGameLoop();
     }
-    document.getElementById('score').textContent = `Score: ${score}`;
-    document.getElementById('level').textContent = `Level: ${level}`;
+    document.getElementById('score').textContent = score;
+    document.getElementById('level').textContent = level;
+    document.getElementById('lines').textContent = totalLinesCleared;
 }
 
 function rotatePiece(piece) {
@@ -510,8 +512,9 @@ function resetGame() {
     pieceBag = [];
     currentPiece = createRandomPiece();
     nextPiece = createRandomPiece();
-    document.getElementById('score').textContent = `Score: ${score}`;
-    document.getElementById('level').textContent = `Level: ${level}`;
+    document.getElementById('score').textContent = score;
+    document.getElementById('level').textContent = level;
+    document.getElementById('lines').textContent = totalLinesCleared;
     render();
 }
 
