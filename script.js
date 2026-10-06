@@ -56,7 +56,7 @@ const GAME_STATES = {
     READY: 'READY',
     PLAYING: 'PLAYING',
     GAME_OVER: 'GAME OVER',
-    RESET: 'RESET'
+    PAUSED: 'PAUSED'
 };
 const ROWS = 20;
 const COLS = 10;
@@ -325,8 +325,15 @@ function placePiece() {
 }
 
 document.addEventListener('keydown', (event) => {
+    if (event.key === 'r' || event.key === 'R') {
+        resetGame();
+        return;
+    }
+
     if (event.key === 'Escape') {
-        pauseGame();
+        if (gameState === GAME_STATES.PLAYING) {
+            pauseGame();
+        }
         return;
     }
 
