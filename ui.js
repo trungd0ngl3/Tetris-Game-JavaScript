@@ -17,20 +17,20 @@ function updateGameUI(gameState) {
     gameOverMenu.style.display = "none";
     console.log("Updating UI for game state:", gameState);
 
-    if (gameState === "ready") {
+    if (gameState === "READY") {
         mainMenu.style.display = "flex";
     }
 
-    if (gameState === "playing") {
+    if (gameState === "PLAYING") {
         game.style.display = "flex";
     }
 
-    if (gameState === "paused") {
+    if (gameState === "PAUSED") {
         game.style.display = "flex";
         pauseMenu.style.display = "flex";
     }
 
-    if (gameState === "game_over") {
+    if (gameState === "GAME OVER") {
         game.style.display = "flex";
         gameOverMenu.style.display = "flex";
     }

@@ -325,8 +325,8 @@ function placePiece() {
 }
 
 document.addEventListener('keydown', (event) => {
-    if(event.key === 'r' || event.key === 'R') {
-        resetGame();
+    if (event.key === 'Escape') {
+        pauseGame();
         return;
     }
 
@@ -464,20 +464,28 @@ function refillPieceBag() {
 function gameOver() {
     gameState = GAME_STATES.GAME_OVER;
     clearInterval(gameInterval);
-    alert('Game Over! Your score: ' + score);
     updateGameUI(gameState);
 }
 
 function startGame() {
+    resetGame();
     gameState = GAME_STATES.PLAYING;
     updateGameUI(gameState);
-    render();
     restartGameLoop();
 }
+
 function pauseGame() {
+    clearInterval(gameInterval);
     gameState = GAME_STATES.PAUSED;
     updateGameUI(gameState);
 }
+
+function showMainMenu() {
+    clearInterval(gameInterval);
+    gameState = GAME_STATES.READY;
+    updateGameUI(gameState);
+}
+
 function restartGameLoop() {
     if (gameInterval) {
         clearInterval(gameInterval);
@@ -486,7 +494,6 @@ function restartGameLoop() {
 }
 
 function resetGame() {
-    gameState = GAME_STATES.RESET;
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     score = 0;
     totalLinesCleared = 0;
@@ -496,11 +503,9 @@ function resetGame() {
     pieceBag = [];
     currentPiece = createRandomPiece();
     nextPiece = createRandomPiece();
-    gameState = GAME_STATES.PLAYING;
     document.getElementById('score').textContent = `Score: ${score}`;
     document.getElementById('level').textContent = `Level: ${level}`;
     render();
-    restartGameLoop();
 }
 
 createHoldBoard();
@@ -510,11 +515,27 @@ updateGameUI(gameState);
 setupUIEvents({
     onStart: () => {
         startGame();
-        updateGameUI(gameState);
     },
-    onGameOverMainMenu: () => {
-        clearInterval(gameInterval);
-        gameState = GAME_STATES.READY;
+
+    onResume: () => {
+        gameState = GAME_STATES.PLAYING;
         updateGameUI(gameState);
+        restartGameLoop();
+    },
+
+    onRestart: () => {
+        startGame();
+    },
+
+    onMainMenu: () => {
+        showMainMenu();
+    },
+
+    onRetry: () => {
+        startGame();
+    },
+
+    onGameOverMainMenu: () => {
+        showMainMenu();
     }
 });
