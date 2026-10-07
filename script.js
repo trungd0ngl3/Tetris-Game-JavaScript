@@ -327,14 +327,11 @@ function placePiece() {
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
         if (gameState === GAME_STATES.PAUSED) {
-            gameState = GAME_STATES.PLAYING;
-            updateGameUI(gameState);
-            restartGameLoop();
+            resumeGame();
         }
-        if (gameState === GAME_STATES.PLAYING) {
+        else if (gameState === GAME_STATES.PLAYING) {
             pauseGame();
         }
-        
         return;
     }
 
@@ -488,6 +485,11 @@ function pauseGame() {
     gameState = GAME_STATES.PAUSED;
     updateGameUI(gameState);
 }
+function resumeGame() {
+    gameState = GAME_STATES.PLAYING;
+    updateGameUI(gameState);
+    restartGameLoop();
+}
 
 function showMainMenu() {
     clearInterval(gameInterval);
@@ -527,10 +529,12 @@ setupUIEvents({
         startGame();
     },
 
+    onPause: () => {
+        pauseGame();
+    },
+
     onResume: () => {
-        gameState = GAME_STATES.PLAYING;
-        updateGameUI(gameState);
-        restartGameLoop();
+        resumeGame();
     },
 
     onRestart: () => {

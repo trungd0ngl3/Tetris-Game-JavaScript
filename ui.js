@@ -2,6 +2,7 @@ const mainMenu = document.getElementById("main-menu");
 const game = document.getElementById("game");
 const pauseMenu = document.getElementById("pause-menu");
 const gameOverMenu = document.getElementById("game-over-menu");
+const pauseGameButton = document.getElementById("pause-game-button");
 
 const startButton = document.getElementById("start-button");
 const resumeButton = document.getElementById("resume-button");
@@ -15,6 +16,7 @@ function updateGameUI(gameState) {
     game.style.display = "none";
     pauseMenu.style.display = "none";
     gameOverMenu.style.display = "none";
+    pauseGameButton.style.display = gameState === "PLAYING" ? "flex" : "none";
     console.log("Updating UI for game state:", gameState);
 
     if (gameState === "READY") {
@@ -38,6 +40,7 @@ function updateGameUI(gameState) {
 
 function setupUIEvents({
     onStart,
+    onPause,
     onResume,
     onRestart,
     onMainMenu,
@@ -45,6 +48,7 @@ function setupUIEvents({
     onGameOverMainMenu
 }) {
     startButton.addEventListener("click", onStart);
+    pauseGameButton.addEventListener("click", onPause);
     resumeButton.addEventListener("click", onResume);
     restartButton.addEventListener("click", onRestart);
     mainMenuButton.addEventListener("click", onMainMenu);
