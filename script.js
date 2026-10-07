@@ -470,6 +470,8 @@ function refillPieceBag() {
 function gameOver() {
     gameState = GAME_STATES.GAME_OVER;
     clearInterval(gameInterval);
+    document.getElementById('final-score').textContent = `Score: ${score}`;
+    document.getElementById('final-level').textContent = `Level: ${level}`;
     updateGameUI(gameState);
 }
 
