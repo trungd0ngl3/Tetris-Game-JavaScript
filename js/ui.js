@@ -1,5 +1,5 @@
 const mainMenu = document.getElementById("main-menu");
-const game = document.getElementById("game");
+const gameElement = document.getElementById("game");
 const pauseMenu = document.getElementById("pause-menu");
 const gameOverMenu = document.getElementById("game-over-menu");
 const pauseGameButton = document.getElementById("pause-game-button");
@@ -13,7 +13,7 @@ const gameOverMainMenuButton = document.getElementById("game-over-main-menu-butt
 
 function updateGameUI(gameState) {
     mainMenu.style.display = "none";
-    game.style.display = "none";
+    gameElement.style.display = "none";
     pauseMenu.style.display = "none";
     gameOverMenu.style.display = "none";
     pauseGameButton.style.display = gameState === "PLAYING" ? "flex" : "none";
@@ -24,16 +24,16 @@ function updateGameUI(gameState) {
     }
 
     if (gameState === "PLAYING") {
-        game.style.display = "flex";
+        gameElement.style.display = "flex";
     }
 
     if (gameState === "PAUSED") {
-        game.style.display = "flex";
+        gameElement.style.display = "flex";
         pauseMenu.style.display = "flex";
     }
 
     if (gameState === "GAME OVER") {
-        game.style.display = "flex";
+        gameElement.style.display = "flex";
         gameOverMenu.style.display = "flex";
     }
 }
