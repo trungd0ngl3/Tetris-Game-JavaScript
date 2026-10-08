@@ -56,8 +56,10 @@ const COLORS = {
 const GAME_STATES = {
     READY: 'READY',
     PLAYING: 'PLAYING',
-    GAME_OVER: 'GAME OVER',
-    PAUSED: 'PAUSED'
+    GAME_OVER: 'GAME_OVER',
+    PAUSED: 'PAUSED',
+    LEVEL_COMPLETE: 'LEVEL_COMPLETE',
+    LEVEL_SELECT: 'LEVEL_SELECT'
 };
 
 const LEVEL_CONFIG = {
@@ -100,8 +102,8 @@ const LEVEL_CONFIG = {
         name: "Element",
         mechanics: ["element"],
         objectives: {
-            elements: 5
-            // số line sẽ xác định sau
+            elements: 5,
+            lines: 10
         }
     },
 
@@ -126,19 +128,25 @@ const LEVEL_CONFIG = {
     8: {
         name: "Element + Garbage",
         mechanics: ["element", "garbage"],
-        objectives: {}
+        objectives: {
+            lines: 10
+        }
     },
 
     9: {
         name: "Blind + Garbage",
         mechanics: ["blind", "garbage"],
-        objectives: {}
+        objectives: {
+            lines: 10
+        }
     },
 
     10: {
         name: "Boss",
         mechanics: ["element", "garbage", "blind"],
-        objectives: {}
+        objectives: {
+            lines: 10
+        }
     }
 };
 
@@ -164,6 +172,7 @@ const game = {
     objectives: {
         lines: 0
     },
+    completedLevels: [],
     canHold: true,
     interval: null,
     pieceBag: []
@@ -428,6 +437,53 @@ function setLevel(level) {
     game.level = level;
 }
 
+function nextLevel() {
+    const nextLevel = game.level + 1;
+    if (!LEVEL_CONFIG[nextLevel] || !isLevelUnlocked(nextLevel)) {
+        return;
+    }
+    selectLevel(nextLevel);
+    startGame();
+}
+
+function isLevelUnlocked(level) {
+    return level === 1 || game.completedLevels.includes(level - 1);
+}
+
+function selectLevel(level) {
+    if (!LEVEL_CONFIG[level] || !isLevelUnlocked(level)) {
+        return false;
+    }
+    game.selectedLevel = level;
+    renderLevelSelect();
+    return true;
+}
+
+function renderLevelSelect() {
+    renderLevelButtons({
+        levels: Object.keys(LEVEL_CONFIG).map(Number),
+        selectedLevel: game.selectedLevel,
+        unlockedLevels: Object.keys(LEVEL_CONFIG)
+            .map(Number)
+            .filter(isLevelUnlocked),
+        onSelectLevel: selectLevel
+    });
+}
+
+function completeLevel() {
+    clearInterval(game.interval);
+    game.state = GAME_STATES.LEVEL_COMPLETE;
+    console.log(`Level ${game.level} Complete!`);
+    if (!game.completedLevels.includes(game.level)) {
+        game.completedLevels.push(game.level);
+    }
+    document.getElementById('level-complete-score').textContent = `Score: ${game.score}`;
+    document.getElementById('level-complete-level').textContent = `Level: ${game.level}`;
+    document.getElementById('level-complete-lines').textContent = `Lines: ${game.lines}`;
+    document.getElementById('next-level-button').style.display =
+        LEVEL_CONFIG[game.level + 1] ? "block" : "none";
+    updateGameUI(game.state);
+}
 // MECHANICS
 function clearLines() {
     let linesCleared = 0;
@@ -520,21 +576,18 @@ function updateScore(linesCleared) {
 }
 
 function checkObjectives() {
-    const config = LEVEL_CONFIG[game.selectedLevel];
-    if(!config){
+    const config = LEVEL_CONFIG[game.level];
+    if (!config) {
         return;
     }
-    if(config.objectives.lines !== undefined && game.objectives.lines >= config.objectives.lines){ 
-        levelComplete();
+    if (
+        config.objectives.lines !== undefined &&
+        game.objectives.lines >= config.objectives.lines
+    ) {
+        completeLevel();
     }
 }
 
-function levelComplete() {
-    clearInterval(game.interval);
-    game.state = 'LEVEL_COMPLETE';
-    console.log(`Level ${game.level} Complete!`);
-    updateGameUI(game.state);
-}
 // GAME LOOP
 function gameOver() {
     game.state = GAME_STATES.GAME_OVER;
@@ -579,6 +632,9 @@ function resetGame() {
     game.board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     game.score = 0;
     game.lines = 0;
+    game.objectives = {
+        lines: 0
+    };
     game.level = game.selectedLevel || 1;
     game.holdPiece = null;
     game.canHold = true;
@@ -669,5 +725,20 @@ setupUIEvents({
 
     onGameOverMainMenu: () => {
         showMainMenu();
+    },
+
+    onNextLevel: () => {
+        nextLevel();
+    },
+
+    onLevelSelect: () => {
+        clearInterval(game.interval);
+        game.state = GAME_STATES.LEVEL_SELECT;
+        renderLevelSelect();
+        updateGameUI(game.state);
+    },
+
+    onPlaySelectedLevel: () => {
+        startGame();
     }
 });

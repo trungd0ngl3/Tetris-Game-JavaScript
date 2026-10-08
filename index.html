@@ -11,6 +11,7 @@
         <div id="main-menu" class="menu">
             <h1>Tetris</h1>
             <button id="start-button">Start</button>
+            <button id="level-select-button">Select Level</button>
         </div>
         <div id="game">
             <div id="left-panel">
@@ -64,6 +65,7 @@
             <h2>Paused</h2>
             <button id="resume-button">Resume</button>
             <button id="restart-button">Restart</button>
+            <button id="pause-menu-level-select-button">Select Level</button>
             <button id="main-menu-button">Main Menu</button>
         </div>
 
@@ -78,7 +80,25 @@
                 Main Menu
             </button>
         </div>
+        <div id="level-complete-menu" class="menu">
+            <h2>Level Complete!</h2>
 
+            <div id="level-complete-score">Score: 0</div>
+            <div id="level-complete-level">Level: 1</div>
+            <div id="level-complete-lines">Lines: 0</div>
+
+            <button id="next-level-button">Next Level</button>
+            <button id="level-complete-main-menu-button">
+                Main Menu
+            </button>
+        </div>
+
+        <div id="level-select-menu" class="menu">
+            <h2>Select Level</h2>
+            <div id="level-buttons-container"></div>
+            <button id="play-selected-level-button">Play Level</button>
+            <button id="level-select-main-menu-button">Main Menu</button>
+        </div>
     </div>
 
     <script src="js/ui.js"></script>
