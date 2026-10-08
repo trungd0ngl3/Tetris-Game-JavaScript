@@ -402,6 +402,9 @@ function lockPiece() {
     placePiece();
     const linesCleared = clearLines();
     updateScore(linesCleared);
+    if (game.state === GAME_STATES.LEVEL_COMPLETE) {
+        return false;
+    }
     if (!spawnPiece()) {
         return false;
     }
@@ -480,8 +483,7 @@ function completeLevel() {
     document.getElementById('level-complete-score').textContent = `Score: ${game.score}`;
     document.getElementById('level-complete-level').textContent = `Level: ${game.level}`;
     document.getElementById('level-complete-lines').textContent = `Lines: ${game.lines}`;
-    document.getElementById('next-level-button').style.display =
-        LEVEL_CONFIG[game.level + 1] ? "block" : "none";
+    document.getElementById('next-level-button').style.display =LEVEL_CONFIG[game.level + 1] ? "block" : "none";
     updateGameUI(game.state);
 }
 // MECHANICS
