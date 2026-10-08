@@ -157,10 +157,13 @@ const game = {
     currentPiece: null,
     nextPiece: null,
     holdPiece: null,
-    currentLevel: 1,
+    selectedLevel: 1,
     score: 0,
     lines: 0,
     level: 1,
+    objectives: {
+        lines: 0
+    },
     canHold: true,
     interval: null,
     pieceBag: []
@@ -509,12 +512,29 @@ function updateScore(linesCleared) {
     const points = linesCleared * 100;
     game.score += points;
     game.lines += linesCleared;
-    
+    game.objectives.lines += linesCleared;
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
+    checkObjectives();
 }
 
+function checkObjectives() {
+    const config = LEVEL_CONFIG[game.selectedLevel];
+    if(!config){
+        return;
+    }
+    if(config.objectives.lines !== undefined && game.objectives.lines >= config.objectives.lines){ 
+        levelComplete();
+    }
+}
+
+function levelComplete() {
+    clearInterval(game.interval);
+    game.state = 'LEVEL_COMPLETE';
+    console.log(`Level ${game.level} Complete!`);
+    updateGameUI(game.state);
+}
 // GAME LOOP
 function gameOver() {
     game.state = GAME_STATES.GAME_OVER;
