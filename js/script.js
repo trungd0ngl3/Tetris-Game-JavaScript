@@ -59,6 +59,89 @@ const GAME_STATES = {
     GAME_OVER: 'GAME OVER',
     PAUSED: 'PAUSED'
 };
+
+const LEVEL_CONFIG = {
+    1: {
+        name: "Classic",
+        mechanics: [],
+        objectives: {
+            lines: 5
+        }
+    },
+
+    2: {
+        name: "Speed",
+        mechanics: ["speed"],
+        objectives: {
+            lines: 10
+            // score target sẽ xác định sau
+        }
+    },
+
+    3: {
+        name: "Target",
+        mechanics: ["target"],
+        objectives: {
+            lines: 8,
+            targets: 5
+        }
+    },
+
+    4: {
+        name: "Locked",
+        mechanics: ["locked"],
+        objectives: {
+            lines: 10,
+            obstacles: 5
+        }
+    },
+
+    5: {
+        name: "Element",
+        mechanics: ["element"],
+        objectives: {
+            elements: 5
+            // số line sẽ xác định sau
+        }
+    },
+
+    6: {
+        name: "Garbage",
+        mechanics: ["garbage"],
+        objectives: {
+            lines: 10,
+            garbage: 10
+        }
+    },
+
+    7: {
+        name: "Blind",
+        mechanics: ["blind"],
+        objectives: {
+            lines: 10,
+            blindEvents: 3
+        }
+    },
+
+    8: {
+        name: "Element + Garbage",
+        mechanics: ["element", "garbage"],
+        objectives: {}
+    },
+
+    9: {
+        name: "Blind + Garbage",
+        mechanics: ["blind", "garbage"],
+        objectives: {}
+    },
+
+    10: {
+        name: "Boss",
+        mechanics: ["element", "garbage", "blind"],
+        objectives: {}
+    }
+};
+
 const ROWS = 20;
 const COLS = 10;
 const GRAVITY = 1000;
@@ -70,17 +153,14 @@ const holdBoard = document.getElementById('hold-board');
 // GAME STATE
 const game = {
     state: GAME_STATES.READY,
-
     board: [],
-
     currentPiece: null,
     nextPiece: null,
     holdPiece: null,
-
+    currentLevel: 1,
     score: 0,
     lines: 0,
     level: 1,
-
     canHold: true,
     interval: null,
     pieceBag: []
@@ -337,12 +417,12 @@ function placePiece() {
 }
 
 // LEVEL SYSTEM
-function updateLevel() {
-    const newLevel = Math.floor(game.lines / 10) + 1;
-    if (newLevel !== game.level) {
-        game.level = newLevel;
-        restartGameLoop();
+function setLevel(level) {
+    if (!LEVEL_CONFIG[level]) {
+        return;
     }
+    game.selectedLevel = level;
+    game.level = level;
 }
 
 // MECHANICS
@@ -429,7 +509,7 @@ function updateScore(linesCleared) {
     const points = linesCleared * 100;
     game.score += points;
     game.lines += linesCleared;
-    updateLevel();
+    
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
@@ -479,7 +559,7 @@ function resetGame() {
     game.board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     game.score = 0;
     game.lines = 0;
-    game.level = 1;
+    game.level = game.selectedLevel || 1;
     game.holdPiece = null;
     game.canHold = true;
     game.pieceBag = [];
