@@ -248,7 +248,7 @@ function renderBoard() {
             const cell = gameBoard.rows[r].cells[c];
 
             cell.className = '';
-            cell.style.backgroundColor = '';
+            cell.style.background = '';
 
             const cellValue = game.board[r][c];
             if (cellValue === 0) {
@@ -258,7 +258,7 @@ function renderBoard() {
             if (cellValue === TARGET_BLOCK) {
                 cell.classList.add('target');
                 cell.style.backgroundColor = '#5bbce3';
-                // cell.style.background = 'linear-gradient(47deg,rgba(91, 188, 227, 1) 2%, rgba(237, 221, 83, 1) 100%)';
+                cell.style.background = 'linear-gradient(47deg,rgba(91, 188, 227, 1) 2%, rgba(237, 221, 83, 1) 100%)';
             } else {
                 cell.style.backgroundColor = COLORS[cellValue];
             }
