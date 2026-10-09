@@ -257,7 +257,8 @@ function renderBoard() {
             cell.classList.add('filled');
             if (cellValue === TARGET_BLOCK) {
                 cell.classList.add('target');
-                cell.style.backgroundColor = '#bc5ffb';
+                cell.style.backgroundColor = '#5bbce3';
+                // cell.style.background = 'linear-gradient(47deg,rgba(91, 188, 227, 1) 2%, rgba(237, 221, 83, 1) 100%)';
             } else {
                 cell.style.backgroundColor = COLORS[cellValue];
             }
@@ -272,6 +273,7 @@ function renderNextPiece() {
 
             cell.className = '';
             cell.style.backgroundColor = '';
+            cell.background='';
         }
     }
 
@@ -358,7 +360,16 @@ function spawnTargets() {
         return;
     }
     const targetsOnBoard = game.board.flat().filter(cell => cell === TARGET_BLOCK).length;
+    if(targetsOnBoard > 0){
+        return
+    }
+
     const targetRemaining = config.objectives.targets - game.objectives.targets;
+
+    if(targetRemaining <= 0){
+        return;
+    }
+
     const targetsToSpawn = Math.min(3 - targetsOnBoard, targetRemaining);
     let spawned = 0;
     let attempts = 0;
@@ -527,14 +538,18 @@ function clearLines() {
     let linesCleared = 0;
     for (let r = ROWS - 1; r >= 0; r--) {
         if (game.board[r].every(cell => cell !== 0)) {
-            const targetInline = game.board[r].filter(cell => cell === TARGET_BLOCK).length;
-            game.objectives.targets += targetInline;
+            const targetsInLine = game.board[r]
+                .filter(cell => cell === TARGET_BLOCK)
+                .length;
+
+            game.objectives.targets += targetsInLine;
             game.board.splice(r, 1);
             game.board.unshift(Array(COLS).fill(0));
             linesCleared++;
             r++;
         }
     }
+    spawnTargets();
     return linesCleared;
 }
 
