@@ -357,16 +357,19 @@ function spawnTargets() {
     if (!config || !config.mechanics.includes("target")) {
         return;
     }
-    let targetsToSpawn = config.objectives.targets;
+    const targetsOnBoard = game.board.flat().filter(cell => cell === TARGET_BLOCK).length;
+    const targetRemaining = config.objectives.targets - game.objectives.targets;
+    const targetsToSpawn = Math.min(3 - targetsOnBoard, targetRemaining);
+    let spawned = 0;
     let attempts = 0;
     const maxAttempts = 100;
-    while (targetsToSpawn > 0 && attempts < maxAttempts) {
+    while ( spawned < targetsToSpawn && attempts < maxAttempts) {
         attempts++;
-        const randomRow = Math.floor(Math.random() * ROWS);
+        const randomRow = Math.floor(Math.random() * (ROWS - ROWS / 2)) + ROWS / 2; // Avoid spawning in the top 4 rows
         const randomCol = Math.floor(Math.random() * COLS);
         if (game.board[randomRow][randomCol] === 0) {
             game.board[randomRow][randomCol] = TARGET_BLOCK;
-            targetsToSpawn--;
+            spawned++;
         }
     }
     if (targetsToSpawn > 0) {
