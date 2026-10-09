@@ -66,6 +66,7 @@ const LEVEL_CONFIG = {
     1: {
         name: "Classic",
         mechanics: [],
+        gravity: 1000,
         objectives: {
             lines: 5
         }
@@ -74,15 +75,16 @@ const LEVEL_CONFIG = {
     2: {
         name: "Speed",
         mechanics: ["speed"],
+        gravity: 700,
         objectives: {
             lines: 10
-            // score target sẽ xác định sau
         }
     },
 
     3: {
         name: "Target",
         mechanics: ["target"],
+        gravity: 700,
         objectives: {
             lines: 8,
             targets: 5
@@ -150,9 +152,10 @@ const LEVEL_CONFIG = {
     }
 };
 
+const TARGET_BLOCK = 2
+
 const ROWS = 20;
 const COLS = 10;
-const GRAVITY = 1000;
 
 const gameBoard = document.getElementById('game-board');
 const nextBoard = document.getElementById('next-board');
@@ -170,9 +173,10 @@ const game = {
     lines: 0,
     level: 1,
     objectives: {
-        lines: 0
+        lines: 0,
+        targets: 0
     },
-    completedLevels: [],
+    completedLevels: [1,2,3,4,5,6,7,8,9,10],
     canHold: true,
     interval: null,
     pieceBag: []
@@ -242,12 +246,19 @@ function renderBoard() {
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             const cell = gameBoard.rows[r].cells[c];
+
             cell.className = '';
             cell.style.backgroundColor = '';
 
             const cellValue = game.board[r][c];
-            if (cellValue !== 0) {
-                cell.classList.add('filled');
+            if (cellValue === 0) {
+                continue;
+            }
+            cell.classList.add('filled');
+            if (cellValue === TARGET_BLOCK) {
+                cell.classList.add('target');
+                cell.style.backgroundColor = '#bc5ffb';
+            } else {
                 cell.style.backgroundColor = COLORS[cellValue];
             }
         }
@@ -338,6 +349,28 @@ function spawnPiece() {
     else {
         game.currentPiece = newPiece;
         return true;
+    }
+}
+
+function spawnTargets() {
+    const config = LEVEL_CONFIG[game.level];
+    if (!config || !config.mechanics.includes("target")) {
+        return;
+    }
+    let targetsToSpawn = config.objectives.targets;
+    let attempts = 0;
+    const maxAttempts = 100;
+    while (targetsToSpawn > 0 && attempts < maxAttempts) {
+        attempts++;
+        const randomRow = Math.floor(Math.random() * ROWS);
+        const randomCol = Math.floor(Math.random() * COLS);
+        if (game.board[randomRow][randomCol] === 0) {
+            game.board[randomRow][randomCol] = TARGET_BLOCK;
+            targetsToSpawn--;
+        }
+    }
+    if (targetsToSpawn > 0) {
+        console.warn(`Could not spawn ${targetsToSpawn} Target blocks.`);
     }
 }
 
@@ -491,6 +524,8 @@ function clearLines() {
     let linesCleared = 0;
     for (let r = ROWS - 1; r >= 0; r--) {
         if (game.board[r].every(cell => cell !== 0)) {
+            const targetInline = game.board[r].filter(cell => cell === TARGET_BLOCK).length;
+            game.objectives.targets += targetInline;
             game.board.splice(r, 1);
             game.board.unshift(Array(COLS).fill(0));
             linesCleared++;
@@ -583,8 +618,9 @@ function checkObjectives() {
         return;
     }
     if (
-        config.objectives.lines !== undefined &&
-        game.objectives.lines >= config.objectives.lines
+        (config.objectives.lines !== undefined &&
+        game.objectives.lines >= config.objectives.lines) && 
+        (config.objectives.targets === undefined || game.objectives.targets >= config.objectives.targets)
     ) {
         completeLevel();
     }
@@ -627,7 +663,8 @@ function restartGameLoop() {
     if (game.interval) {
         clearInterval(game.interval);
     }
-    game.interval = setInterval(moveDown, GRAVITY / game.level);
+    const config = LEVEL_CONFIG[game.level];
+    game.interval = setInterval(moveDown, config.gravity);
 }
 
 function resetGame() {
@@ -635,7 +672,8 @@ function resetGame() {
     game.score = 0;
     game.lines = 0;
     game.objectives = {
-        lines: 0
+        lines: 0,
+        targets: 0
     };
     game.level = game.selectedLevel || 1;
     game.holdPiece = null;
@@ -646,6 +684,7 @@ function resetGame() {
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
+    spawnTargets();
     render();
 }
 
