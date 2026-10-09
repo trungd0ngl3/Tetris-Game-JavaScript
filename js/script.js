@@ -447,6 +447,8 @@ function lockPiece() {
     placePiece();
     const linesCleared = clearLines();
     updateScore(linesCleared);
+    refreshObjectiveProgress();
+    checkObjectives();
     if (game.state === GAME_STATES.LEVEL_COMPLETE) {
         return false;
     }
@@ -626,10 +628,7 @@ function updateScore(linesCleared) {
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
-    updateObjectiveProgress({
-        objectives: LEVEL_CONFIG[game.level].objectives,
-        progress: game.objectives
-    });
+    refreshObjectiveProgress();
     checkObjectives();
 }
 
@@ -647,6 +646,14 @@ function checkObjectives() {
     }
 }
 
+function refreshObjectiveProgress() {
+    const config = LEVEL_CONFIG[game.level];
+    if (!config) return;
+    updateObjectiveProgress({
+        objectives: config.objectives,
+        progress: game.objectives
+    });
+}
 // GAME LOOP
 function gameOver() {
     game.state = GAME_STATES.GAME_OVER;
