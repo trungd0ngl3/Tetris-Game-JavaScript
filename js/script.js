@@ -511,6 +511,7 @@ function renderLevelSelect() {
     renderLevelButtons({
         levels: Object.keys(LEVEL_CONFIG).map(Number),
         selectedLevel: game.selectedLevel,
+        selectedLevelConfig: LEVEL_CONFIG[game.selectedLevel],
         unlockedLevels: Object.keys(LEVEL_CONFIG)
             .map(Number)
             .filter(isLevelUnlocked),
@@ -625,6 +626,10 @@ function updateScore(linesCleared) {
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
+    updateObjectiveProgress({
+        objectives: LEVEL_CONFIG[game.level].objectives,
+        progress: game.objectives
+    });
     checkObjectives();
 }
 
@@ -700,6 +705,10 @@ function resetGame() {
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
+    updateObjectiveProgress({
+        objectives: LEVEL_CONFIG[game.level].objectives,
+        progress: game.objectives
+    });
     spawnTargets();
     render();
 }

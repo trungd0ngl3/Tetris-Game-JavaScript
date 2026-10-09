@@ -19,8 +19,44 @@ const levelSelectButton = document.getElementById("level-select-button");
 const levelSelectMainMenuButton = document.getElementById("level-select-main-menu-button");
 const playSelectedLevelButton = document.getElementById("play-selected-level-button");
 const levelButtonsContainer = document.getElementById("level-buttons-container");
+const selectedLevelName = document.getElementById("selected-level-name");
+const selectedLevelObjectives = document.getElementById("selected-level-objectives");
+const objectiveProgressList = document.getElementById("objective-progress-list");
 
-function renderLevelButtons({ levels, selectedLevel, unlockedLevels, onSelectLevel }) {
+const OBJECTIVE_LABELS = {
+    lines: "Lines",
+    targets: "Targets",
+    obstacles: "Obstacles",
+    elements: "Elements",
+    garbage: "Garbage",
+    blindEvents: "Blind events"
+};
+
+function updateObjectiveProgress({ objectives, progress }) {
+    objectiveProgressList.innerHTML = "";
+
+    Object.entries(objectives).forEach(([objective, target]) => {
+        const current = Math.min(progress[objective] || 0, target);
+        const item = document.createElement("li");
+        const label = document.createElement("span");
+        const progressBar = document.createElement("progress");
+
+        label.textContent =`${OBJECTIVE_LABELS[objective] || objective}: ${current}/${target}`;
+        progressBar.max = target;
+        progressBar.value = current;
+        progressBar.setAttribute("aria-label", `${OBJECTIVE_LABELS[objective] || objective} progress`);
+        item.append(label, progressBar);
+        objectiveProgressList.appendChild(item);
+    });
+}
+
+function renderLevelButtons({
+    levels,
+    selectedLevel,
+    selectedLevelConfig,
+    unlockedLevels,
+    onSelectLevel
+}) {
     levelButtonsContainer.innerHTML = "";
 
     levels.forEach((level) => {
@@ -44,6 +80,15 @@ function renderLevelButtons({ levels, selectedLevel, unlockedLevels, onSelectLev
 
         button.addEventListener("click", () => onSelectLevel(level));
         levelButtonsContainer.appendChild(button);
+    });
+
+    selectedLevelName.textContent = `Level ${selectedLevel}: ${selectedLevelConfig.name}`;
+    selectedLevelObjectives.innerHTML = "";
+
+    Object.entries(selectedLevelConfig.objectives).forEach(([objective, count]) => {
+        const item = document.createElement("li");
+        item.textContent = `${OBJECTIVE_LABELS[objective] || objective}: ${count}`;
+        selectedLevelObjectives.appendChild(item);
     });
 }
 
