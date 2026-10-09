@@ -146,6 +146,12 @@ body {
         inset -2px -2px 0 rgba(0, 0, 0, 0.15);
 }
 
+#game-board td.target {
+    background: linear-gradient(100deg, #f7e541 0%, #ff0482 100%);
+    border: 3px solid #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+
 #highscore-container {
     display: flex;
     flex-direction: column;
@@ -285,3 +291,4 @@ body {
 .menu button.level-button:disabled:hover {
     background: #7c8496;
 }
+

@@ -44,13 +44,13 @@ const PIECES = {
 };
 
 const COLORS = {
-    I: 'cyan',
-    O: 'yellow',
-    T: 'purple',
-    S: 'green',
-    Z: 'red',
-    J: 'blue',
-    L: 'orange'
+    I: '#00A896',
+    O: '#D4A373',
+    T: '#6C5CE7',
+    S: '#2EC4B6',
+    Z: '#E63946',
+    J: '#1D3557',
+    L: '#E07A5F'
 };
 
 const GAME_STATES = {
@@ -257,10 +257,8 @@ function renderBoard() {
             cell.classList.add('filled');
             if (cellValue === TARGET_BLOCK) {
                 cell.classList.add('target');
-                cell.style.backgroundColor = '#5bbce3';
-                cell.style.background = 'linear-gradient(47deg,rgba(91, 188, 227, 1) 2%, rgba(237, 221, 83, 1) 100%)';
             } else {
-                cell.style.backgroundColor = COLORS[cellValue];
+                cell.style.background = COLORS[cellValue];
             }
         }
     }
