@@ -94,6 +94,7 @@ const LEVEL_CONFIG = {
     4: {
         name: "Locked",
         mechanics: ["locked"],
+        gravity: 700,
         objectives: {
             lines: 10,
             obstacles: 5
@@ -103,6 +104,7 @@ const LEVEL_CONFIG = {
     5: {
         name: "Element",
         mechanics: ["element"],
+        gravity: 700,
         objectives: {
             elements: 5,
             lines: 10
@@ -112,6 +114,7 @@ const LEVEL_CONFIG = {
     6: {
         name: "Garbage",
         mechanics: ["garbage"],
+        gravity: 700,
         objectives: {
             lines: 10,
             garbage: 10
@@ -121,6 +124,7 @@ const LEVEL_CONFIG = {
     7: {
         name: "Blind",
         mechanics: ["blind"],
+        gravity: 700,
         objectives: {
             lines: 10,
             blindEvents: 3
@@ -130,6 +134,7 @@ const LEVEL_CONFIG = {
     8: {
         name: "Element + Garbage",
         mechanics: ["element", "garbage"],
+        gravity: 700,
         objectives: {
             lines: 10
         }
@@ -138,6 +143,7 @@ const LEVEL_CONFIG = {
     9: {
         name: "Blind + Garbage",
         mechanics: ["blind", "garbage"],
+        gravity: 700,
         objectives: {
             lines: 10
         }
@@ -146,6 +152,7 @@ const LEVEL_CONFIG = {
     10: {
         name: "Boss",
         mechanics: ["element", "garbage", "blind"],
+        gravity: 700,
         objectives: {
             lines: 10
         }
@@ -374,7 +381,7 @@ function spawnTargets() {
     const maxAttempts = 100;
     while ( spawned < targetsToSpawn && attempts < maxAttempts) {
         attempts++;
-        const randomRow = Math.floor(Math.random() * (ROWS - ROWS / 2)) + ROWS / 2; // Avoid spawning in the top 4 rows
+        const randomRow = Math.floor(Math.random() * (ROWS - ROWS / 2)) + ROWS / 2;
         const randomCol = Math.floor(Math.random() * COLS);
         if (game.board[randomRow][randomCol] === 0) {
             game.board[randomRow][randomCol] = TARGET_BLOCK;
@@ -382,7 +389,7 @@ function spawnTargets() {
         }
     }
     if (targetsToSpawn > 0) {
-        console.warn(`Could not spawn ${targetsToSpawn} Target blocks.`);
+        console.warn(targetsToSpawn);
     }
 }
 
@@ -447,8 +454,6 @@ function lockPiece() {
     placePiece();
     const linesCleared = clearLines();
     updateScore(linesCleared);
-    refreshObjectiveProgress();
-    checkObjectives();
     if (game.state === GAME_STATES.LEVEL_COMPLETE) {
         return false;
     }
