@@ -567,6 +567,17 @@ function moveDown() {
     }
 }
 
+function hardDrop() {
+    if (game.state !== GAME_STATES.PLAYING || game.isAnimating || !game.currentPiece) {
+        return false;
+    }
+
+    while (canMove(game.currentPiece, game.currentPiece.row + 1, game.currentPiece.col)) {
+        game.currentPiece.row++;
+    }
+    return lockPiece();
+}
+
 async function lockPiece() {
     if (game.isAnimating || !game.currentPiece) {
         return false;
@@ -1059,10 +1070,7 @@ document.addEventListener('keydown', (event) => {
 
     if (event.key === ' ') {
         event.preventDefault();
-        while (canMove(game.currentPiece, game.currentPiece.row + 1, game.currentPiece.col)) {
-            game.currentPiece.row++;
-        }
-        lockPiece();
+        hardDrop();
     }
 
     if (event.key === 'c' || event.key === 'C') {
