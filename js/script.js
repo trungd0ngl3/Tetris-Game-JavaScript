@@ -646,26 +646,21 @@ function completeLevel() {
 function activateElement(elementType, row, col) {
     switch (elementType) {
         case ELEMENT_TYPES.FIRE.id: {
-            const blastOffsets = [
-                [-1, 0],
-                [1, 0],
-                [0, -1],
-                [0, 1]
-            ];
-
-            blastOffsets.forEach(([rowOffset, colOffset]) => {
-                const blastRow = row + rowOffset;
-                const blastCol = col + colOffset;
-                if (
-                    blastRow >= 0 &&
-                    blastRow < ROWS &&
-                    blastCol >= 0 &&
-                    blastCol < COLS &&
-                    COLORS[game.board[blastRow][blastCol]]
-                ) {
-                    game.board[blastRow][blastCol] = 0;
+            for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
+                for (let blastCol = Math.max(0, col - 1); blastCol <= Math.min(COLS - 1, col + 1); blastCol++) {
+                    const block = game.board[blastRow][blastCol];
+                    if (block === ROCK_BLOCK_2HP) {
+                        game.board[blastRow][blastCol] = ROCK_BLOCK_1HP;
+                    } else if (block === ROCK_BLOCK_1HP) {
+                        game.board[blastRow][blastCol] = 0;
+                        game.objectives.obstacles++;
+                    } else if (COLORS[block]) {
+                        game.board[blastRow][blastCol] = 0;
+                    } else if (getElementType(block)) {
+                        game.board[blastRow][blastCol] = 0;
+                    }
                 }
-            });
+            }
             return;
         }
         default:
@@ -681,6 +676,7 @@ function clearLines() {
         .filter(index => index !== -1);
 
     const elementsByRow = new Map();
+    const activatedElements = [];
     fullRows.forEach(row => {
         game.board[row].forEach((cell, col) => {
             const element = getElementType(cell);
@@ -688,9 +684,15 @@ function clearLines() {
                 return;
             }
 
-            elementsByRow.set(row, (elementsByRow.get(row) || 0) + 1);
-            activateElement(element.id, row, col);
+            activatedElements.push({ type: element.id, block: cell, row, col });
         });
+    });
+    activatedElements.forEach(({ type, block, row, col }) => {
+        if (game.board[row][col] !== block) {
+            return;
+        }
+        elementsByRow.set(row, (elementsByRow.get(row) || 0) + 1);
+        activateElement(type, row, col);
     });
 
     let removedRows = 0;
