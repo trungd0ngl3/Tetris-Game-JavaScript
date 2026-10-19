@@ -97,7 +97,7 @@ const LEVEL_CONFIG = {
         gravity: 700,
         objectives: {
             lines: 10,
-            obstacles: 10
+            obstacles: 8
         }
     },
 
@@ -166,16 +166,14 @@ const ROCK_BLOCK_1HP = 'rock-1hp';
 const ROWS = 20;
 const COLS = 10;
 const OBSTACLE_LAYOUT = [
-    { row: 14, col: 0 },
-    { row: 14, col: 1 },
     { row: 14, col: 2 },
-    { row: 14, col: 6 },
-    { row: 14, col: 7 },
-    { row: 17, col: 3 },
-    { row: 17, col: 4 },
-    { row: 17, col: 5 },
-    { row: 17, col: 8 },
-    { row: 17, col: 9 }
+    { row: 15, col: 2 },
+    { row: 16, col: 2 },
+    { row: 16, col: 3 },
+    { row: 15, col: 7 },
+    { row: 16, col: 7 },
+    { row: 17, col: 7 },
+    { row: 17, col: 6 },
 ];
 
 const gameBoard = document.getElementById('game-board');
