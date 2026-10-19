@@ -264,6 +264,30 @@ body {
     text-align: center;
 }
 
+#game-board td.ice-element,
+#hold-board td.ice-element,
+#next-board td.ice-element {
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #ffffff 0, #b9f5ff 38%, #38bdf8 78%);
+    border: 2px solid #e0fbff;
+}
+
+#game-board td.ice-element::after,
+#hold-board td.ice-element::after,
+#next-board td.ice-element::after {
+    content: "❄";
+    display: block;
+    color: #087ca7;
+    font: bold 16px/1 Arial, sans-serif;
+    text-align: center;
+}
+
+#game-board td.ice-activating {
+    position: relative;
+    z-index: 1;
+    animation: ice-ignite 125ms ease-out both;
+}
+
 @keyframes fire-ignite {
     from {
         filter: brightness(1);
@@ -273,6 +297,19 @@ body {
     to {
         filter: brightness(2);
         box-shadow: 0 0 16px 6px rgba(255, 159, 28, 0.95);
+        transform: scale(1.12);
+    }
+}
+
+@keyframes ice-ignite {
+    from {
+        filter: brightness(1);
+        box-shadow: 0 0 0 rgba(56, 189, 248, 0);
+        transform: scale(1);
+    }
+    to {
+        filter: brightness(2);
+        box-shadow: 0 0 16px 6px rgba(224, 251, 255, 0.95);
         transform: scale(1.12);
     }
 }

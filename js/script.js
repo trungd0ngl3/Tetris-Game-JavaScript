@@ -131,17 +131,18 @@ const LEVEL_CONFIG = {
     },
 
     6: {
-        name: "Garbage",
-        mechanics: ["garbage"],
+        name: "Element - Ice",
+        mechanics: ["element"],
+        elementTypes: [ELEMENT_TYPES.ICE.id],
         gravity: 700,
         objectives: {
             lines: 10,
-            garbage: 10
+            elements: 5
         }
     },
 
     7: {
-        name: "Blind",
+        name: "Element - Lightning",
         mechanics: ["blind"],
         gravity: 700,
         objectives: {
@@ -183,6 +184,9 @@ const ROCK_BLOCK_2HP = 'rock-2hp';
 const ROCK_BLOCK_1HP = 'rock-1hp';
 const FIRE_IGNITION_DURATION = 100;
 const FIRE_BLAST_DURATION = 250;
+const ICE_DURATION = 3000;
+const ICE_FALL_MULTIPLIER = 0.5;
+const ICE_ACTIVATION_DURATION = 125;
 
 const ROWS = 20;
 const COLS = 10;
@@ -224,6 +228,11 @@ const game = {
     pieceBag: [],
     isAnimating: false,
     fireAnimation: null,
+    iceActive: false,
+    iceEndTime: 0,
+    iceTimeout: null,
+    iceAnimationPositions: [],
+    iceAnimationEndTime: 0,
     animationId: 0
 };
 
@@ -346,6 +355,12 @@ function renderBoard() {
                 cell.classList.add(getElementType(cellValue).className);
             } else {
                 cell.style.background = COLORS[cellValue];
+            }
+            if (
+                Date.now() < game.iceAnimationEndTime &&
+                game.iceAnimationPositions.some(position => position.row === r && position.col === c)
+            ) {
+                cell.classList.add('ice-activating');
             }
         }
     }
@@ -747,6 +762,9 @@ function animateFireEffects(effects) {
 
 function activateElement(elementType, row, col, affectedPositions = new Set()) {
     switch (elementType) {
+        case ELEMENT_TYPES.ICE.id:
+            activateIce(row, col);
+            return [];
         case ELEMENT_TYPES.FIRE.id: {
             const affected = [];
             for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
@@ -778,6 +796,38 @@ function activateElement(elementType, row, col, affectedPositions = new Set()) {
         }
         default:
             throw new Error(`Element effect is not implemented: ${elementType}`);
+    }
+}
+
+function activateIce(row, col) {
+    const now = Date.now();
+    game.iceActive = true;
+    game.iceEndTime = now + ICE_DURATION;
+    game.iceAnimationPositions = now < game.iceAnimationEndTime
+        ? [...game.iceAnimationPositions, { row, col }]
+        : [{ row, col }];
+    game.iceAnimationEndTime = now + ICE_ACTIVATION_DURATION;
+
+    if (game.iceTimeout !== null) {
+        clearTimeout(game.iceTimeout);
+    }
+    game.iceTimeout = setTimeout(updateIceEffect, ICE_DURATION);
+
+    if (game.state === GAME_STATES.PLAYING) {
+        restartGameLoop();
+    }
+}
+
+function updateIceEffect() {
+    if (!game.iceActive || Date.now() < game.iceEndTime) {
+        return;
+    }
+
+    game.iceActive = false;
+    game.iceEndTime = 0;
+    game.iceTimeout = null;
+    if (game.state === GAME_STATES.PLAYING) {
+        restartGameLoop();
     }
 }
 
@@ -998,14 +1048,26 @@ function restartGameLoop() {
     if (game.interval) {
         clearInterval(game.interval);
     }
+    game.interval = setInterval(moveDown, getCurrentFallInterval());
+}
+
+function getCurrentFallInterval() {
     const config = LEVEL_CONFIG[game.level];
-    game.interval = setInterval(moveDown, config.gravity);
+    return config.gravity / (game.iceActive ? ICE_FALL_MULTIPLIER : 1);
 }
 
 function resetGame() {
     game.animationId++;
     game.isAnimating = false;
     game.fireAnimation = null;
+    if (game.iceTimeout !== null) {
+        clearTimeout(game.iceTimeout);
+    }
+    game.iceActive = false;
+    game.iceEndTime = 0;
+    game.iceTimeout = null;
+    game.iceAnimationPositions = [];
+    game.iceAnimationEndTime = 0;
     game.board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     game.score = 0;
     game.lines = 0;
