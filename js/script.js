@@ -745,12 +745,18 @@ function animateFireEffects(effects) {
     });
 }
 
-function activateElement(elementType, row, col) {
+function activateElement(elementType, row, col, affectedPositions = new Set()) {
     switch (elementType) {
         case ELEMENT_TYPES.FIRE.id: {
             const affected = [];
             for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
                 for (let blastCol = Math.max(0, col - 1); blastCol <= Math.min(COLS - 1, col + 1); blastCol++) {
+                    const position = `${blastRow},${blastCol}`;
+                    if (affectedPositions.has(position)) {
+                        continue;
+                    }
+                    affectedPositions.add(position);
+
                     const block = game.board[blastRow][blastCol];
                     if (block === ROCK_BLOCK_2HP) {
                         game.board[blastRow][blastCol] = ROCK_BLOCK_1HP;
@@ -778,59 +784,56 @@ function activateElement(elementType, row, col) {
 function clearLines() {
     let linesCleared = 0;
     let obstaclesDestroyed = 0;
-    const fullRows = game.board
-        .map((row, index) => row.every(cell => cell !== 0) ? index : -1)
-        .filter(index => index !== -1);
+    const fullRows = game.board.filter(row => row.every(cell => cell !== 0));
 
     const elementsByRow = new Map();
     const activatedElements = [];
     const fireEffects = [];
+    const affectedFirePositions = new Set();
     fullRows.forEach(row => {
-        game.board[row].forEach((cell, col) => {
+        const rowIndex = game.board.indexOf(row);
+        row.forEach((cell, col) => {
             const element = getElementType(cell);
             if (!element) {
                 return;
             }
 
-            activatedElements.push({ type: element.id, block: cell, row, col });
+            activatedElements.push({ type: element.id, block: cell, row: rowIndex, rowData: row, col });
         });
     });
-    activatedElements.forEach(({ type, block, row, col }) => {
-        if (game.board[row][col] !== block) {
-            return;
-        }
-        elementsByRow.set(row, (elementsByRow.get(row) || 0) + 1);
-        const affected = activateElement(type, row, col);
+    activatedElements.forEach(({ type, block, row, rowData, col }) => {
+        elementsByRow.set(rowData, (elementsByRow.get(rowData) || 0) + 1);
+        const affected = activateElement(type, row, col, affectedFirePositions);
         if (type === ELEMENT_TYPES.FIRE.id) {
             fireEffects.push({ center: { row, col }, affected });
         }
     });
 
-    let removedRows = 0;
     for (let i = fullRows.length - 1; i >= 0; i--) {
-        const r = fullRows[i] + removedRows;
-        game.objectives.elements += elementsByRow.get(fullRows[i]) || 0;
-        const targetsInLine = game.board[r]
+        const row = fullRows[i];
+        const r = game.board.indexOf(row);
+        game.objectives.elements += elementsByRow.get(row) || 0;
+        const targetsInLine = row
             .filter(cell => cell === TARGET_BLOCK)
             .length;
         game.objectives.targets += targetsInLine;
 
         let survivingObstacles = 0;
-        game.board[r] = game.board[r].map(cell => {
+        row.forEach((cell, col) => {
             if (cell === ROCK_BLOCK_2HP) {
                 survivingObstacles++;
-                return ROCK_BLOCK_1HP;
-            }
-            if (cell === ROCK_BLOCK_1HP) {
+                row[col] = ROCK_BLOCK_1HP;
+            } else if (cell === ROCK_BLOCK_1HP) {
                 obstaclesDestroyed++;
+                row[col] = 0;
+            } else {
+                row[col] = 0;
             }
-            return 0;
         });
 
         if (survivingObstacles === 0) {
             game.board.splice(r, 1);
             game.board.unshift(Array(COLS).fill(0));
-            removedRows++;
         }
         linesCleared++;
     }
