@@ -187,6 +187,7 @@ const FIRE_BLAST_DURATION = 250;
 const ICE_DURATION = 3000;
 const ICE_FALL_MULTIPLIER = 0.5;
 const ICE_ACTIVATION_DURATION = 125;
+const LINE_FALL_SPEED_MULTIPLIER = 1.1;
 
 const ROWS = 20;
 const COLS = 10;
@@ -227,7 +228,6 @@ const game = {
     interval: null,
     pieceBag: [],
     isAnimating: false,
-    fireAnimation: null,
     iceActive: false,
     iceEndTime: 0,
     iceTimeout: null,
@@ -600,18 +600,17 @@ async function lockPiece() {
     }
     placePiece();
     game.currentPiece = null;
-    const linesCleared = clearLines();
-
-    if (game.fireAnimation) {
+    const clearAnimation = animatePendingClear();
+    if (clearAnimation) {
         clearInterval(game.interval);
         game.interval = null;
         const animationId = game.animationId;
-        await game.fireAnimation;
+        await clearAnimation;
         if (animationId !== game.animationId) {
             return false;
         }
-        game.fireAnimation = null;
     }
+    const linesCleared = clearLines();
 
     updateScore(linesCleared);
     if (game.state === GAME_STATES.LEVEL_COMPLETE) {
@@ -624,7 +623,7 @@ async function lockPiece() {
     }
     game.canHold = true;
     render();
-    if (game.state === GAME_STATES.PLAYING && !game.interval) {
+    if (game.state === GAME_STATES.PLAYING && (!game.interval || linesCleared > 0)) {
         restartGameLoop();
     }
     return true;
@@ -707,13 +706,21 @@ function completeLevel() {
     updateGameUI(game.state);
 }
 // MECHANICS
-function animateFireEffects(effects) {
+function animateClearEffects(effects, icePositions, fullRows) {
     const animationId = ++game.animationId;
     game.isAnimating = true;
 
     effects.forEach(({ center }) => {
         const centerCell = gameBoard.rows[center.row].cells[center.col];
         centerCell.classList.add('fire-activating');
+    });
+    icePositions.forEach(({ row, col }) => {
+        gameBoard.rows[row].cells[col].classList.add('ice-activating');
+    });
+    fullRows.forEach(row => {
+        for (let col = 0; col < COLS; col++) {
+            gameBoard.rows[row].cells[col].classList.add('line-clearing');
+        }
     });
 
     return new Promise(resolve => {
@@ -752,12 +759,81 @@ function animateFireEffects(effects) {
                             gameBoard.rows[row].cells[col].classList.remove('fire-destroying', 'obstacle-cracked');
                         });
                     });
+                    icePositions.forEach(({ row, col }) => {
+                        gameBoard.rows[row].cells[col].classList.remove('ice-activating');
+                    });
+                    fullRows.forEach(row => {
+                        for (let col = 0; col < COLS; col++) {
+                            gameBoard.rows[row].cells[col].classList.remove('line-clearing');
+                        }
+                    });
                     game.isAnimating = false;
                 }
                 resolve();
             }, FIRE_BLAST_DURATION);
         }, FIRE_IGNITION_DURATION);
     });
+}
+
+function getPendingClearEffects() {
+    const fullRows = game.board
+        .map((row, index) => row.every(cell => cell !== 0) ? index : -1)
+        .filter(index => index !== -1);
+    if (fullRows.length === 0) {
+        return null;
+    }
+
+    const effects = [];
+    const icePositions = [];
+    const affectedPositions = new Set();
+    fullRows.forEach(row => {
+        game.board[row].forEach((cell, col) => {
+            const element = getElementType(cell);
+            if (!element) {
+                return;
+            }
+
+            if (element.id === ELEMENT_TYPES.ICE.id) {
+                icePositions.push({ row, col });
+            } else if (element.id === ELEMENT_TYPES.FIRE.id) {
+                const affected = [];
+                for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
+                    for (let blastCol = Math.max(0, col - 1); blastCol <= Math.min(COLS - 1, col + 1); blastCol++) {
+                        const position = `${blastRow},${blastCol}`;
+                        if (affectedPositions.has(position)) {
+                            continue;
+                        }
+                        affectedPositions.add(position);
+
+                        const block = game.board[blastRow][blastCol];
+                        if (block === ROCK_BLOCK_2HP) {
+                            affected.push({ row: blastRow, col: blastCol, kind: 'obstacle-damaged' });
+                        } else if (
+                            block === ROCK_BLOCK_1HP ||
+                            COLORS[block] ||
+                            getElementType(block)
+                        ) {
+                            affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
+                        }
+                    }
+                }
+                effects.push({ center: { row, col }, affected });
+            }
+        });
+    });
+    return { effects, icePositions, fullRows };
+}
+
+function animatePendingClear() {
+    const pendingClear = getPendingClearEffects();
+    if (!pendingClear) {
+        return null;
+    }
+    return animateClearEffects(
+        pendingClear.effects,
+        pendingClear.icePositions,
+        pendingClear.fullRows
+    );
 }
 
 function activateElement(elementType, row, col, affectedPositions = new Set()) {
@@ -838,7 +914,6 @@ function clearLines() {
 
     const elementsByRow = new Map();
     const activatedElements = [];
-    const fireEffects = [];
     const affectedFirePositions = new Set();
     fullRows.forEach(row => {
         const rowIndex = game.board.indexOf(row);
@@ -853,10 +928,7 @@ function clearLines() {
     });
     activatedElements.forEach(({ type, block, row, rowData, col }) => {
         elementsByRow.set(rowData, (elementsByRow.get(rowData) || 0) + 1);
-        const affected = activateElement(type, row, col, affectedFirePositions);
-        if (type === ELEMENT_TYPES.FIRE.id) {
-            fireEffects.push({ center: { row, col }, affected });
-        }
+        activateElement(type, row, col, affectedFirePositions);
     });
 
     for (let i = fullRows.length - 1; i >= 0; i--) {
@@ -890,9 +962,6 @@ function clearLines() {
 
     if (obstaclesDestroyed > 0) {
         game.objectives.obstacles += obstaclesDestroyed;
-    }
-    if (fireEffects.length > 0) {
-        game.fireAnimation = animateFireEffects(fireEffects);
     }
     spawnTargets();
     return linesCleared;
@@ -1053,13 +1122,14 @@ function restartGameLoop() {
 
 function getCurrentFallInterval() {
     const config = LEVEL_CONFIG[game.level];
-    return config.gravity / (game.iceActive ? ICE_FALL_MULTIPLIER : 1);
+    const lineSpeedMultiplier = Math.pow(LINE_FALL_SPEED_MULTIPLIER, game.lines);
+    const iceMultiplier = game.iceActive ? ICE_FALL_MULTIPLIER : 1;
+    return Math.max(1, config.gravity / (lineSpeedMultiplier * iceMultiplier));
 }
 
 function resetGame() {
     game.animationId++;
     game.isAnimating = false;
-    game.fireAnimation = null;
     if (game.iceTimeout !== null) {
         clearTimeout(game.iceTimeout);
     }
