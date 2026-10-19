@@ -181,6 +181,8 @@ const LEVEL_CONFIG = {
 const TARGET_BLOCK = 2
 const ROCK_BLOCK_2HP = 'rock-2hp';
 const ROCK_BLOCK_1HP = 'rock-1hp';
+const FIRE_IGNITION_DURATION = 100;
+const FIRE_BLAST_DURATION = 250;
 
 const ROWS = 20;
 const COLS = 10;
@@ -219,7 +221,10 @@ const game = {
     completedLevels: [1,2,3,4,5,6,7,8,9,10],
     canHold: true,
     interval: null,
-    pieceBag: []
+    pieceBag: [],
+    isAnimating: false,
+    fireAnimation: null,
+    animationId: 0
 };
 
 // BOARD
@@ -498,7 +503,9 @@ function render() {
     renderBoard();
     renderNextPiece();
     renderHoldPiece();
-    renderPiece(game.currentPiece);
+    if (game.currentPiece) {
+        renderPiece(game.currentPiece);
+    }
 }
 
 function canMove(piece, newRow, newCol, shape = piece.shape) {
@@ -529,6 +536,9 @@ function canMove(piece, newRow, newCol, shape = piece.shape) {
 }
 
 function moveLeft() {
+    if (game.isAnimating || !game.currentPiece) {
+        return;
+    }
     if (canMove(game.currentPiece, game.currentPiece.row, game.currentPiece.col - 1)) {
         game.currentPiece.col--;
         render();
@@ -536,6 +546,9 @@ function moveLeft() {
 }
 
 function moveRight() {
+    if (game.isAnimating || !game.currentPiece) {
+        return;
+    }
     if (canMove(game.currentPiece, game.currentPiece.row, game.currentPiece.col + 1)) {
         game.currentPiece.col++;
         render();
@@ -543,6 +556,9 @@ function moveRight() {
 }
 
 function moveDown() {
+    if (game.isAnimating || !game.currentPiece) {
+        return;
+    }
     if (canMove(game.currentPiece, game.currentPiece.row + 1, game.currentPiece.col)) {
         game.currentPiece.row++;
         render();
@@ -551,18 +567,39 @@ function moveDown() {
     }
 }
 
-function lockPiece() {
+async function lockPiece() {
+    if (game.isAnimating || !game.currentPiece) {
+        return false;
+    }
     placePiece();
+    game.currentPiece = null;
     const linesCleared = clearLines();
+
+    if (game.fireAnimation) {
+        clearInterval(game.interval);
+        game.interval = null;
+        const animationId = game.animationId;
+        await game.fireAnimation;
+        if (animationId !== game.animationId) {
+            return false;
+        }
+        game.fireAnimation = null;
+    }
+
     updateScore(linesCleared);
     if (game.state === GAME_STATES.LEVEL_COMPLETE) {
+        render();
         return false;
     }
     if (!spawnPiece()) {
+        render();
         return false;
     }
     game.canHold = true;
     render();
+    if (game.state === GAME_STATES.PLAYING && !game.interval) {
+        restartGameLoop();
+    }
     return true;
 }
 
@@ -643,25 +680,83 @@ function completeLevel() {
     updateGameUI(game.state);
 }
 // MECHANICS
+function animateFireEffects(effects) {
+    const animationId = ++game.animationId;
+    game.isAnimating = true;
+
+    effects.forEach(({ center }) => {
+        const centerCell = gameBoard.rows[center.row].cells[center.col];
+        centerCell.classList.add('fire-activating');
+    });
+
+    return new Promise(resolve => {
+        setTimeout(() => {
+            if (animationId === game.animationId) {
+                effects.forEach(({ center }) => {
+                    const centerCell = gameBoard.rows[center.row].cells[center.col];
+                    centerCell.classList.remove('fire-activating');
+                });
+                effects.forEach(({ center, affected }) => {
+                    for (let row = Math.max(0, center.row - 1); row <= Math.min(ROWS - 1, center.row + 1); row++) {
+                        for (let col = Math.max(0, center.col - 1); col <= Math.min(COLS - 1, center.col + 1); col++) {
+                            gameBoard.rows[row].cells[col].classList.add('fire-blast');
+                        }
+                    }
+                    affected.forEach(({ row, col, kind }) => {
+                        const cell = gameBoard.rows[row].cells[col];
+                        if (kind === 'obstacle-damaged') {
+                            cell.classList.add('obstacle-cracked');
+                        } else if (kind === 'destroyed') {
+                            cell.classList.add('fire-destroying');
+                        }
+                    });
+                });
+            }
+
+            setTimeout(() => {
+                if (animationId === game.animationId) {
+                    effects.forEach(({ center, affected }) => {
+                        for (let row = Math.max(0, center.row - 1); row <= Math.min(ROWS - 1, center.row + 1); row++) {
+                            for (let col = Math.max(0, center.col - 1); col <= Math.min(COLS - 1, center.col + 1); col++) {
+                                gameBoard.rows[row].cells[col].classList.remove('fire-blast');
+                            }
+                        }
+                        affected.forEach(({ row, col }) => {
+                            gameBoard.rows[row].cells[col].classList.remove('fire-destroying', 'obstacle-cracked');
+                        });
+                    });
+                    game.isAnimating = false;
+                }
+                resolve();
+            }, FIRE_BLAST_DURATION);
+        }, FIRE_IGNITION_DURATION);
+    });
+}
+
 function activateElement(elementType, row, col) {
     switch (elementType) {
         case ELEMENT_TYPES.FIRE.id: {
+            const affected = [];
             for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
                 for (let blastCol = Math.max(0, col - 1); blastCol <= Math.min(COLS - 1, col + 1); blastCol++) {
                     const block = game.board[blastRow][blastCol];
                     if (block === ROCK_BLOCK_2HP) {
                         game.board[blastRow][blastCol] = ROCK_BLOCK_1HP;
+                        affected.push({ row: blastRow, col: blastCol, kind: 'obstacle-damaged' });
                     } else if (block === ROCK_BLOCK_1HP) {
                         game.board[blastRow][blastCol] = 0;
                         game.objectives.obstacles++;
+                        affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
                     } else if (COLORS[block]) {
                         game.board[blastRow][blastCol] = 0;
+                        affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
                     } else if (getElementType(block)) {
                         game.board[blastRow][blastCol] = 0;
+                        affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
                     }
                 }
             }
-            return;
+            return affected;
         }
         default:
             throw new Error(`Element effect is not implemented: ${elementType}`);
@@ -677,6 +772,7 @@ function clearLines() {
 
     const elementsByRow = new Map();
     const activatedElements = [];
+    const fireEffects = [];
     fullRows.forEach(row => {
         game.board[row].forEach((cell, col) => {
             const element = getElementType(cell);
@@ -692,7 +788,10 @@ function clearLines() {
             return;
         }
         elementsByRow.set(row, (elementsByRow.get(row) || 0) + 1);
-        activateElement(type, row, col);
+        const affected = activateElement(type, row, col);
+        if (type === ELEMENT_TYPES.FIRE.id) {
+            fireEffects.push({ center: { row, col }, affected });
+        }
     });
 
     let removedRows = 0;
@@ -726,6 +825,9 @@ function clearLines() {
 
     if (obstaclesDestroyed > 0) {
         game.objectives.obstacles += obstaclesDestroyed;
+    }
+    if (fireEffects.length > 0) {
+        game.fireAnimation = animateFireEffects(fireEffects);
     }
     spawnTargets();
     return linesCleared;
@@ -858,6 +960,9 @@ function startGame() {
 }
 
 function pauseGame() {
+    if (game.isAnimating) {
+        return;
+    }
     clearInterval(game.interval);
     game.state = GAME_STATES.PAUSED;
     updateGameUI(game.state);
@@ -883,6 +988,9 @@ function restartGameLoop() {
 }
 
 function resetGame() {
+    game.animationId++;
+    game.isAnimating = false;
+    game.fireAnimation = null;
     game.board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     game.score = 0;
     game.lines = 0;
@@ -914,6 +1022,10 @@ function resetGame() {
 
 // INPUT
 document.addEventListener('keydown', (event) => {
+    if (game.isAnimating) {
+        return;
+    }
+
     if (event.key === 'Escape') {
         if (game.state === GAME_STATES.PAUSED) {
             resumeGame();
