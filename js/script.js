@@ -92,12 +92,12 @@ const LEVEL_CONFIG = {
     },
 
     4: {
-        name: "Locked",
-        mechanics: ["locked"],
+        name: "Obstacle",
+        mechanics: ["obstacle"],
         gravity: 700,
         objectives: {
             lines: 10,
-            obstacles: 5
+            obstacles: 10
         }
     },
 
@@ -160,9 +160,23 @@ const LEVEL_CONFIG = {
 };
 
 const TARGET_BLOCK = 2
+const ROCK_BLOCK_2HP = 'rock-2hp';
+const ROCK_BLOCK_1HP = 'rock-1hp';
 
 const ROWS = 20;
 const COLS = 10;
+const OBSTACLE_LAYOUT = [
+    { row: 14, col: 0 },
+    { row: 14, col: 1 },
+    { row: 14, col: 2 },
+    { row: 14, col: 6 },
+    { row: 14, col: 7 },
+    { row: 17, col: 3 },
+    { row: 17, col: 4 },
+    { row: 17, col: 5 },
+    { row: 17, col: 8 },
+    { row: 17, col: 9 }
+];
 
 const gameBoard = document.getElementById('game-board');
 const nextBoard = document.getElementById('next-board');
@@ -181,7 +195,8 @@ const game = {
     level: 1,
     objectives: {
         lines: 0,
-        targets: 0
+        targets: 0,
+        obstacles: 0
     },
     completedLevels: [1,2,3,4,5,6,7,8,9,10],
     canHold: true,
@@ -264,6 +279,10 @@ function renderBoard() {
             cell.classList.add('filled');
             if (cellValue === TARGET_BLOCK) {
                 cell.classList.add('target');
+            } else if (cellValue === ROCK_BLOCK_2HP || cellValue === ROCK_BLOCK_1HP) {
+                cell.classList.add('obstacle');
+                cell.classList.add(cellValue === ROCK_BLOCK_2HP ? 'obstacle-2hp' : 'obstacle-1hp');
+                cell.dataset.hp = cellValue === ROCK_BLOCK_2HP ? '2' : '1';
             } else {
                 cell.style.background = COLORS[cellValue];
             }
@@ -391,6 +410,17 @@ function spawnTargets() {
     if (targetsToSpawn > 0) {
         console.warn(targetsToSpawn);
     }
+}
+
+function initializeObstacles() {
+    const config = LEVEL_CONFIG[game.level];
+    if (!config || !config.mechanics.includes("obstacle")) {
+        return;
+    }
+
+    OBSTACLE_LAYOUT.forEach(({ row, col }) => {
+        game.board[row][col] = ROCK_BLOCK_2HP;
+    });
 }
 
 function render() {
@@ -542,6 +572,7 @@ function completeLevel() {
 // MECHANICS
 function clearLines() {
     let linesCleared = 0;
+    let obstaclesDestroyed = 0;
     for (let r = ROWS - 1; r >= 0; r--) {
         if (game.board[r].every(cell => cell !== 0)) {
             const targetsInLine = game.board[r]
@@ -549,11 +580,30 @@ function clearLines() {
                 .length;
 
             game.objectives.targets += targetsInLine;
-            game.board.splice(r, 1);
-            game.board.unshift(Array(COLS).fill(0));
+            let survivingObstacles = 0;
+            game.board[r] = game.board[r].map(cell => {
+                if (cell === ROCK_BLOCK_2HP) {
+                    survivingObstacles++;
+                    return ROCK_BLOCK_1HP;
+                }
+                if (cell === ROCK_BLOCK_1HP) {
+                    obstaclesDestroyed++;
+                    return 0;
+                }
+                return 0;
+            });
+
+            if (survivingObstacles === 0) {
+                game.board.splice(r, 1);
+                game.board.unshift(Array(COLS).fill(0));
+                r++;
+            }
             linesCleared++;
-            r++;
         }
+    }
+
+    if (obstaclesDestroyed > 0) {
+        game.objectives.obstacles += obstaclesDestroyed;
     }
     spawnTargets();
     return linesCleared;
@@ -642,11 +692,11 @@ function checkObjectives() {
     if (!config) {
         return;
     }
-    if (
-        (config.objectives.lines !== undefined &&
-        game.objectives.lines >= config.objectives.lines) && 
-        (config.objectives.targets === undefined || game.objectives.targets >= config.objectives.targets)
-    ) {
+    const objectivesComplete =
+        (config.objectives.lines === undefined || game.objectives.lines >= config.objectives.lines) &&
+        (config.objectives.targets === undefined || game.objectives.targets >= config.objectives.targets) &&
+        (config.objectives.obstacles === undefined || game.objectives.obstacles >= config.objectives.obstacles);
+    if (objectivesComplete) {
         completeLevel();
     }
 }
@@ -706,7 +756,8 @@ function resetGame() {
     game.lines = 0;
     game.objectives = {
         lines: 0,
-        targets: 0
+        targets: 0,
+        obstacles: 0
     };
     game.level = game.selectedLevel || 1;
     game.holdPiece = null;
@@ -717,6 +768,9 @@ function resetGame() {
     document.getElementById('score').textContent = game.score;
     document.getElementById('level').textContent = game.level;
     document.getElementById('lines').textContent = game.lines;
+    if (LEVEL_CONFIG[game.level].mechanics.includes("obstacle")) {
+        initializeObstacles();
+    }
     updateObjectiveProgress({
         objectives: LEVEL_CONFIG[game.level].objectives,
         progress: game.objectives

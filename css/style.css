@@ -181,6 +181,40 @@ body {
     transition: all 0.2s ease-in-out;
 }
 
+#game-board td.obstacle {
+    position: relative;
+    color: #ffffff;
+    text-align: center;
+    font: bold 14px Arial, sans-serif;
+    text-shadow: 0 1px 2px #000000;
+}
+
+#game-board td.obstacle::after {
+    content: attr(data-hp);
+}
+
+#game-board td.obstacle-2hp {
+    background: repeating-linear-gradient(
+        135deg,
+        #707783 0,
+        #707783 5px,
+        #525965 5px,
+        #525965 10px
+    );
+    border: 2px solid #c5c9ce;
+}
+
+#game-board td.obstacle-1hp {
+    background: repeating-linear-gradient(
+        135deg,
+        #a36f55 0,
+        #a36f55 5px,
+        #79503e 5px,
+        #79503e 10px
+    );
+    border: 2px solid #e1b49b;
+}
+
 #highscore-container {
     display: flex;
     flex-direction: column;
