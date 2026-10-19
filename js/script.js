@@ -575,6 +575,7 @@ function hardDrop() {
     while (canMove(game.currentPiece, game.currentPiece.row + 1, game.currentPiece.col)) {
         game.currentPiece.row++;
     }
+    render();
     return lockPiece();
 }
 
