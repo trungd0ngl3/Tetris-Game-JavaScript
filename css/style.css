@@ -215,6 +215,23 @@ body {
     border: 2px solid #e1b49b;
 }
 
+#game-board td.fire-element,
+#hold-board td.fire-element,
+#next-board td.fire-element {
+    position: relative;
+    background: radial-gradient(circle at 50% 70%, #fff2a6 0, #ff9f1c 42%, #e63924 78%);
+    border: 2px solid #ffe6a3;
+}
+
+#game-board td.fire-element::after,
+#hold-board td.fire-element::after,
+#next-board td.fire-element::after {
+    content: "🔥";
+    display: block;
+    font: 15px/1 Arial, sans-serif;
+    text-align: center;
+}
+
 #highscore-container {
     display: flex;
     flex-direction: column;

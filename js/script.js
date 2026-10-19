@@ -62,6 +62,24 @@ const GAME_STATES = {
     LEVEL_SELECT: 'LEVEL_SELECT'
 };
 
+const ELEMENT_TYPES = {
+    FIRE: {
+        id: 'fire',
+        block: 'element-fire',
+        className: 'fire-element'
+    },
+    ICE: {
+        id: 'ice',
+        block: 'element-ice',
+        className: 'ice-element'
+    },
+    LIGHTNING: {
+        id: 'lightning',
+        block: 'element-lightning',
+        className: 'lightning-element'
+    }
+};
+
 const LEVEL_CONFIG = {
     1: {
         name: "Classic",
@@ -102,8 +120,9 @@ const LEVEL_CONFIG = {
     },
 
     5: {
-        name: "Element",
+        name: "Element - Fire",
         mechanics: ["element"],
+        elementTypes: [ELEMENT_TYPES.FIRE.id],
         gravity: 700,
         objectives: {
             elements: 5,
@@ -194,7 +213,8 @@ const game = {
     objectives: {
         lines: 0,
         targets: 0,
-        obstacles: 0
+        obstacles: 0,
+        elements: 0
     },
     completedLevels: [1,2,3,4,5,6,7,8,9,10],
     canHold: true,
@@ -253,13 +273,49 @@ function createRandomPiece() {
         refillPieceBag();
     }
     const randomType = game.pieceBag.pop();
-    return {
+    const piece = {
         type: randomType,
         shape: PIECES[randomType].map(row => [...row]),
         color: COLORS[randomType],
         row: randomType === 'I' ? -1 : 0,
         col: Math.floor(COLS / 2) - 1
-    };  
+    };
+    return createElementPiece(piece);
+}
+
+function createElementPiece(piece) {
+    const config = LEVEL_CONFIG[game.level];
+    if (!config || !config.mechanics.includes("element") || !config.elementTypes || Math.random() >= 0.35) {
+        return piece;
+    }
+
+    const availableElements = config.elementTypes.map(elementId => {
+        const element = Object.values(ELEMENT_TYPES).find(elementType => elementType.id === elementId);
+        if (!element) {
+            throw new Error(`Unknown element type in level configuration: ${elementId}`);
+        }
+        return element;
+    });
+
+    const element = availableElements[Math.floor(Math.random() * availableElements.length)];
+    const occupiedCells = [];
+    piece.shape.forEach((row, r) => row.forEach((cell, c) => {
+        if (cell !== 0) {
+            occupiedCells.push({ row: r, col: c });
+        }
+    }));
+    const elementCell = occupiedCells[Math.floor(Math.random() * occupiedCells.length)];
+    piece.shape[elementCell.row][elementCell.col] = element.block;
+    piece.element = {
+        type: element.id,
+        row: elementCell.row,
+        col: elementCell.col
+    };
+    return piece;
+}
+
+function getElementType(block) {
+    return Object.values(ELEMENT_TYPES).find(element => element.block === block) || null;
 }
 
 function renderBoard() {
@@ -281,6 +337,8 @@ function renderBoard() {
                 cell.classList.add('obstacle');
                 cell.classList.add(cellValue === ROCK_BLOCK_2HP ? 'obstacle-2hp' : 'obstacle-1hp');
                 cell.dataset.hp = cellValue === ROCK_BLOCK_2HP ? '2' : '1';
+            } else if (getElementType(cellValue)) {
+                cell.classList.add(getElementType(cellValue).className);
             } else {
                 cell.style.background = COLORS[cellValue];
             }
@@ -308,7 +366,12 @@ function renderNextPiece() {
             const cell = nextBoard.rows[r].cells[c];
 
             cell.classList.add('filled');
-            cell.style.backgroundColor = game.nextPiece.color;
+            const element = getElementType(game.nextPiece.shape[r][c]);
+            if (element) {
+                cell.classList.add(element.className);
+            } else {
+                cell.style.backgroundColor = game.nextPiece.color;
+            }
         }
     }
 }
@@ -333,7 +396,12 @@ function renderHoldPiece() {
             const cell = holdBoard.rows[r].cells[c];
 
             cell.classList.add('filled');
-            cell.style.backgroundColor = game.holdPiece.color;
+            const element = getElementType(game.holdPiece.shape[r][c]);
+            if (element) {
+                cell.classList.add(element.className);
+            } else {
+                cell.style.backgroundColor = game.holdPiece.color;
+            }
         }
     }
 }
@@ -356,7 +424,12 @@ function renderPiece(piece) {
             const cell = gameBoard.rows[boardRow].cells[boardCol];
 
             cell.classList.add('filled');
-            cell.style.backgroundColor = piece.color;
+            const element = getElementType(piece.shape[r][c]);
+            if (element) {
+                cell.classList.add(element.className);
+            } else {
+                cell.style.backgroundColor = piece.color;
+            }
         }
     }
 }
@@ -506,7 +579,9 @@ function placePiece() {
                 continue;
             }
             
-            game.board[boardRow][boardCol] = game.currentPiece.type;
+            game.board[boardRow][boardCol] = getElementType(game.currentPiece.shape[r][c])
+                ? game.currentPiece.shape[r][c]
+                : game.currentPiece.type;
         }
     }
 }
@@ -568,36 +643,83 @@ function completeLevel() {
     updateGameUI(game.state);
 }
 // MECHANICS
+function activateElement(elementType, row, col) {
+    switch (elementType) {
+        case ELEMENT_TYPES.FIRE.id: {
+            const blastOffsets = [
+                [-1, 0],
+                [1, 0],
+                [0, -1],
+                [0, 1]
+            ];
+
+            blastOffsets.forEach(([rowOffset, colOffset]) => {
+                const blastRow = row + rowOffset;
+                const blastCol = col + colOffset;
+                if (
+                    blastRow >= 0 &&
+                    blastRow < ROWS &&
+                    blastCol >= 0 &&
+                    blastCol < COLS &&
+                    COLORS[game.board[blastRow][blastCol]]
+                ) {
+                    game.board[blastRow][blastCol] = 0;
+                }
+            });
+            return;
+        }
+        default:
+            throw new Error(`Element effect is not implemented: ${elementType}`);
+    }
+}
+
 function clearLines() {
     let linesCleared = 0;
     let obstaclesDestroyed = 0;
-    for (let r = ROWS - 1; r >= 0; r--) {
-        if (game.board[r].every(cell => cell !== 0)) {
-            const targetsInLine = game.board[r]
-                .filter(cell => cell === TARGET_BLOCK)
-                .length;
+    const fullRows = game.board
+        .map((row, index) => row.every(cell => cell !== 0) ? index : -1)
+        .filter(index => index !== -1);
 
-            game.objectives.targets += targetsInLine;
-            let survivingObstacles = 0;
-            game.board[r] = game.board[r].map(cell => {
-                if (cell === ROCK_BLOCK_2HP) {
-                    survivingObstacles++;
-                    return ROCK_BLOCK_1HP;
-                }
-                if (cell === ROCK_BLOCK_1HP) {
-                    obstaclesDestroyed++;
-                    return 0;
-                }
-                return 0;
-            });
-
-            if (survivingObstacles === 0) {
-                game.board.splice(r, 1);
-                game.board.unshift(Array(COLS).fill(0));
-                r++;
+    const elementsByRow = new Map();
+    fullRows.forEach(row => {
+        game.board[row].forEach((cell, col) => {
+            const element = getElementType(cell);
+            if (!element) {
+                return;
             }
-            linesCleared++;
+
+            elementsByRow.set(row, (elementsByRow.get(row) || 0) + 1);
+            activateElement(element.id, row, col);
+        });
+    });
+
+    let removedRows = 0;
+    for (let i = fullRows.length - 1; i >= 0; i--) {
+        const r = fullRows[i] + removedRows;
+        game.objectives.elements += elementsByRow.get(fullRows[i]) || 0;
+        const targetsInLine = game.board[r]
+            .filter(cell => cell === TARGET_BLOCK)
+            .length;
+        game.objectives.targets += targetsInLine;
+
+        let survivingObstacles = 0;
+        game.board[r] = game.board[r].map(cell => {
+            if (cell === ROCK_BLOCK_2HP) {
+                survivingObstacles++;
+                return ROCK_BLOCK_1HP;
+            }
+            if (cell === ROCK_BLOCK_1HP) {
+                obstaclesDestroyed++;
+            }
+            return 0;
+        });
+
+        if (survivingObstacles === 0) {
+            game.board.splice(r, 1);
+            game.board.unshift(Array(COLS).fill(0));
+            removedRows++;
         }
+        linesCleared++;
     }
 
     if (obstaclesDestroyed > 0) {
@@ -660,6 +782,15 @@ function holdCurrentPiece() {
 
 function resetPiecePosition(piece) {
     piece.shape = PIECES[piece.type].map(row => [...row]);
+    if (piece.element) {
+        const element = Object.values(ELEMENT_TYPES).find(
+            elementType => elementType.id === piece.element.type
+        );
+        if (!element) {
+            throw new Error(`Unknown element type: ${piece.element.type}`);
+        }
+        piece.shape[piece.element.row][piece.element.col] = element.block;
+    }
     piece.row = piece.type === 'I' ? -1 : 0;
     piece.col = Math.floor(COLS / 2) - 1;
 }
@@ -693,7 +824,8 @@ function checkObjectives() {
     const objectivesComplete =
         (config.objectives.lines === undefined || game.objectives.lines >= config.objectives.lines) &&
         (config.objectives.targets === undefined || game.objectives.targets >= config.objectives.targets) &&
-        (config.objectives.obstacles === undefined || game.objectives.obstacles >= config.objectives.obstacles);
+        (config.objectives.obstacles === undefined || game.objectives.obstacles >= config.objectives.obstacles) &&
+        (config.objectives.elements === undefined || game.objectives.elements >= config.objectives.elements);
     if (objectivesComplete) {
         completeLevel();
     }
@@ -755,7 +887,8 @@ function resetGame() {
     game.objectives = {
         lines: 0,
         targets: 0,
-        obstacles: 0
+        obstacles: 0,
+        elements: 0
     };
     game.level = game.selectedLevel || 1;
     game.holdPiece = null;
