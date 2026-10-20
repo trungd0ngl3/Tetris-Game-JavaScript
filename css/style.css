@@ -233,6 +233,12 @@ body {
     animation: line-clear 350ms ease-in-out both;
 }
 
+#game-board td.lightning-strike {
+    position: relative;
+    z-index: 1;
+    animation: lightning-strike 350ms ease-out both;
+}
+
 #game-board td.obstacle-cracked {
     position: relative;
 }
@@ -286,6 +292,26 @@ body {
     text-align: center;
 }
 
+#game-board td.lightning-element,
+#hold-board td.lightning-element,
+#next-board td.lightning-element {
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #fffde7 0, #ffe66d 38%, #00d9ff 82%);
+    border: 2px solid #fff176;
+    box-shadow: 0 0 8px 2px rgba(0, 217, 255, 0.65);
+}
+
+#game-board td.lightning-element::after,
+#hold-board td.lightning-element::after,
+#next-board td.lightning-element::after {
+    content: "⚡";
+    display: block;
+    color: #fff176;
+    font: bold 15px/1 Arial, sans-serif;
+    text-align: center;
+    text-shadow: 0 0 4px #087ca7;
+}
+
 #game-board td.ice-activating {
     position: relative;
     z-index: 1;
@@ -330,6 +356,21 @@ body {
         filter: brightness(2);
         box-shadow: 0 0 16px 6px rgba(224, 251, 255, 0.95);
         transform: scale(1.12);
+    }
+}
+
+@keyframes lightning-strike {
+    0%, 100% {
+        filter: brightness(1);
+        box-shadow: inset 0 0 0 rgba(0, 217, 255, 0);
+    }
+    20%, 60% {
+        filter: brightness(2.5);
+        box-shadow: inset 0 0 14px 4px rgba(255, 241, 118, 0.95), 0 0 12px 4px rgba(0, 217, 255, 0.9);
+    }
+    40%, 80% {
+        filter: brightness(1.5);
+        box-shadow: inset 0 0 8px 2px rgba(0, 217, 255, 0.9);
     }
 }
 

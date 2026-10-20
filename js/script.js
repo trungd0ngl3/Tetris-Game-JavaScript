@@ -143,11 +143,12 @@ const LEVEL_CONFIG = {
 
     7: {
         name: "Element - Lightning",
-        mechanics: ["blind"],
+        mechanics: ["element"],
+        elementTypes: [ELEMENT_TYPES.LIGHTNING.id],
         gravity: 700,
         objectives: {
             lines: 10,
-            blindEvents: 3
+            elements: 5
         }
     },
 
@@ -706,7 +707,7 @@ function completeLevel() {
     updateGameUI(game.state);
 }
 // MECHANICS
-function animateClearEffects(effects, icePositions, fullRows) {
+function animateClearEffects(effects, icePositions, lightningPositions, fullRows) {
     const animationId = ++game.animationId;
     game.isAnimating = true;
 
@@ -716,6 +717,11 @@ function animateClearEffects(effects, icePositions, fullRows) {
     });
     icePositions.forEach(({ row, col }) => {
         gameBoard.rows[row].cells[col].classList.add('ice-activating');
+    });
+    lightningPositions.forEach(({ col }) => {
+        for (let row = 0; row < ROWS; row++) {
+            gameBoard.rows[row].cells[col].classList.add('lightning-strike');
+        }
     });
     fullRows.forEach(row => {
         for (let col = 0; col < COLS; col++) {
@@ -762,6 +768,11 @@ function animateClearEffects(effects, icePositions, fullRows) {
                     icePositions.forEach(({ row, col }) => {
                         gameBoard.rows[row].cells[col].classList.remove('ice-activating');
                     });
+                    lightningPositions.forEach(({ col }) => {
+                        for (let row = 0; row < ROWS; row++) {
+                            gameBoard.rows[row].cells[col].classList.remove('lightning-strike');
+                        }
+                    });
                     fullRows.forEach(row => {
                         for (let col = 0; col < COLS; col++) {
                             gameBoard.rows[row].cells[col].classList.remove('line-clearing');
@@ -785,6 +796,7 @@ function getPendingClearEffects() {
 
     const effects = [];
     const icePositions = [];
+    const lightningPositions = [];
     const affectedPositions = new Set();
     fullRows.forEach(row => {
         game.board[row].forEach((cell, col) => {
@@ -818,10 +830,12 @@ function getPendingClearEffects() {
                     }
                 }
                 effects.push({ center: { row, col }, affected });
+            } else if (element.id === ELEMENT_TYPES.LIGHTNING.id) {
+                lightningPositions.push({ row, col });
             }
         });
     });
-    return { effects, icePositions, fullRows };
+    return { effects, icePositions, lightningPositions, fullRows };
 }
 
 function animatePendingClear() {
@@ -832,6 +846,7 @@ function animatePendingClear() {
     return animateClearEffects(
         pendingClear.effects,
         pendingClear.icePositions,
+        pendingClear.lightningPositions,
         pendingClear.fullRows
     );
 }
@@ -870,9 +885,37 @@ function activateElement(elementType, row, col, affectedPositions = new Set()) {
             }
             return affected;
         }
+        case ELEMENT_TYPES.LIGHTNING.id:
+            return applyLightningStrike(getLightningStrikeCells(row, col), affectedPositions);
         default:
             throw new Error(`Element effect is not implemented: ${elementType}`);
     }
+}
+
+function getLightningStrikeCells(row, col) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+        return [];
+    }
+    return Array.from({ length: ROWS }, (_, strikeRow) => ({ row: strikeRow, col }));
+}
+
+function applyLightningStrike(cells, affectedPositions = new Set()) {
+    const affected = [];
+    cells.forEach(({ row, col }) => {
+        const position = `${row},${col}`;
+        if (affectedPositions.has(position)) {
+            return;
+        }
+        affectedPositions.add(position);
+
+        const block = game.board[row][col];
+        if (!COLORS[block] && block !== ELEMENT_TYPES.LIGHTNING.block) {
+            return;
+        }
+        game.board[row][col] = 0;
+        affected.push({ row, col, kind: 'destroyed' });
+    });
+    return affected;
 }
 
 function activateIce(row, col) {
@@ -915,6 +958,7 @@ function clearLines() {
     const elementsByRow = new Map();
     const activatedElements = [];
     const affectedFirePositions = new Set();
+    const affectedLightningPositions = new Set();
     fullRows.forEach(row => {
         const rowIndex = game.board.indexOf(row);
         row.forEach((cell, col) => {
@@ -928,7 +972,10 @@ function clearLines() {
     });
     activatedElements.forEach(({ type, block, row, rowData, col }) => {
         elementsByRow.set(rowData, (elementsByRow.get(rowData) || 0) + 1);
-        activateElement(type, row, col, affectedFirePositions);
+        const affectedPositions = type === ELEMENT_TYPES.LIGHTNING.id
+            ? affectedLightningPositions
+            : affectedFirePositions;
+        activateElement(type, row, col, affectedPositions);
     });
 
     for (let i = fullRows.length - 1; i >= 0; i--) {
