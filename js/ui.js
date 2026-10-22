@@ -20,8 +20,24 @@ const levelSelectMainMenuButton = document.getElementById("level-select-main-men
 const playSelectedLevelButton = document.getElementById("play-selected-level-button");
 const levelButtonsContainer = document.getElementById("level-buttons-container");
 const selectedLevelName = document.getElementById("selected-level-name");
+const selectedLevelDescription = document.getElementById("selected-level-description");
+const currentLevelDescription = document.getElementById("current-level-description");
 const selectedLevelObjectives = document.getElementById("selected-level-objectives");
 const objectiveProgressList = document.getElementById("objective-progress-list");
+
+const LEVEL_DESCRIPTIONS = {
+    1: "Xóa 5 hàng để hoàn thành màn chơi. Sắp xếp các khối thật khéo léo và đừng để bảng bị lấp đầy!",
+    2: "Xóa 10 hàng và đạt mục tiêu điểm số. Khối rơi nhanh hơn, hãy phản ứng thật nhanh!",
+    3: "Xóa 8 hàng và phá hủy 5 Target Blocks bằng cách xóa các hàng chứa chúng.",
+    4: "Xóa các hàng và phá hủy vật cản để mở rộng không gian xếp khối.",
+    5: "Xóa 10 hàng và kích hoạt Fire 5 lần. Vụ nổ Fire phá hủy các khối trong vùng 3×3.",
+    6: "Xóa 10 hàng và kích hoạt Ice 5 lần. Ice làm chậm tốc độ rơi của khối trong thời gian ngắn.",
+    7: "Xóa 10 hàng và kích hoạt Lightning 5 lần. Tia sét phá hủy các khối theo cột dọc.",
+    8: "Xóa 12 hàng và kích hoạt 8 nguyên tố. Kết hợp Fire, Ice và Lightning để kiểm soát bảng chơi!",
+    9: "Xóa 10 hàng và loại bỏ 5 Garbage Rows. Đừng để những hàng rác đẩy bảng lên quá cao!",
+    10: "Xóa 15 hàng, loại bỏ 5 Garbage Rows và kích hoạt 10 nguyên tố. Tận dụng sức mạnh nguyên tố để chống lại Garbage!",
+    11: "Xóa 12 hàng và xóa 6 hàng khi Blind hoạt động. Ghi nhớ vị trí các khối khi bảng còn hiển thị!"
+};
 
 const OBJECTIVE_LABELS = {
     lines: "Lines",
@@ -85,6 +101,7 @@ function renderLevelButtons({
     });
 
     selectedLevelName.textContent = `Level ${selectedLevel}: ${selectedLevelConfig.name}`;
+    selectedLevelDescription.textContent = LEVEL_DESCRIPTIONS[selectedLevel] || "";
     selectedLevelObjectives.innerHTML = "";
 
     Object.entries(selectedLevelConfig.objectives).forEach(([objective, count]) => {
@@ -102,6 +119,11 @@ function updateGameUI(gameState) {
     levelCompleteMenu.style.display = "none";
     levelSelectMenu.style.display = "none";
     pauseGameButton.style.display = gameState === "PLAYING" ? "flex" : "none";
+    currentLevelDescription.textContent =
+        LEVEL_DESCRIPTIONS[Number(document.getElementById("level").textContent)] || "";
+    currentLevelDescription.hidden =
+        !currentLevelDescription.textContent ||
+        (gameState !== "PLAYING" && gameState !== "PAUSED");
     console.log("Updating UI for game state:", gameState);
 
     if (gameState === "READY") {

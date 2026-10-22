@@ -70,6 +70,11 @@ body {
     margin-top: 45px;
 }
 
+#right-panel:has(#current-level-description:not([hidden])) {
+    width: 235px;
+    align-items: flex-start;
+}
+
 .panel {
     width: 105px;
     background: #f7f7f4;
@@ -92,6 +97,16 @@ body {
 
 #objective-progress-container {
     padding-bottom: 8px;
+}
+
+#current-level-description {
+    width: 100%;
+    max-width: 235px;
+    margin: 0;
+    padding: 8px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.35;
 }
 
 #objective-progress-list {
@@ -614,7 +629,13 @@ body {
     font-size: 20px;
 }
 
-#selected-level-details p {
+#selected-level-description {
+    margin: 8px 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.45;
+}
+
+#selected-level-details p:not(#selected-level-description) {
     margin: 8px 0 4px;
     font-weight: bold;
 }
