@@ -178,6 +178,59 @@ body {
     content: none !important;
 }
 
+#game-board td.blind-warning {
+    position: relative;
+}
+
+#game-board td.blind-warning-top::before,
+#game-board td.blind-warning-bottom::before,
+#game-board td.blind-warning-left::after,
+#game-board td.blind-warning-right::after {
+    content: "";
+    position: absolute;
+    z-index: 3;
+    border: #000000;
+    background: #feffbf;
+    pointer-events: none;
+    animation: blind-warning-outline-flash 300ms steps(2, end) infinite;
+}
+
+#game-board td.blind-warning-top::before,
+#game-board td.blind-warning-bottom::before {
+    left: -1px;
+    right: -1px;
+    height: 3px;
+}
+
+#game-board td.blind-warning-top::before {
+    top: -1px;
+}
+
+#game-board td.blind-warning-bottom::before {
+    bottom: -1px;
+}
+
+#game-board td.blind-warning-left::after,
+#game-board td.blind-warning-right::after {
+    top: -1px;
+    bottom: -1px;
+    width: 3px;
+}
+
+#game-board td.blind-warning-left::after {
+    left: -1px;
+}
+
+#game-board td.blind-warning-right::after {
+    right: -1px;
+}
+
+@keyframes blind-warning-outline-flash {
+    50% {
+        opacity: 0;
+    }
+}
+
 #game-board td.filled,
 #hold-board td.filled,
 #next-board td.filled {

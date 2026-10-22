@@ -217,6 +217,7 @@ const ICE_ACTIVATION_DURATION = 125;
 const LINE_FALL_SPEED_MULTIPLIER = 1.05;
 const BLIND_VISIBLE_DURATION = 5000;
 const BLIND_DURATION = 4000;
+const BLIND_WARNING_DURATION = 1500;
 const BLIND_ROW_COUNT = 6;
 
 const ROWS = 20;
@@ -269,6 +270,7 @@ const game = {
     piecesLocked: 0,
     garbageRowsSpawned: 0,
     blindActive: false,
+    blindWarningActive: false,
     blindStartRow: null,
     blindNextTransitionAt: 0,
     blindRemainingTime: 0,
@@ -372,7 +374,9 @@ function getElementType(block) {
 }
 
 function renderBoard() {
-    const blindEndRow = game.blindStartRow + Math.min(BLIND_ROW_COUNT, ROWS);
+    const blindEndRow = game.blindStartRow === null
+        ? null
+        : game.blindStartRow + Math.min(BLIND_ROW_COUNT, ROWS);
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             const cell = gameBoard.rows[r].cells[c];
@@ -380,12 +384,28 @@ function renderBoard() {
             cell.className = '';
             cell.style.background = '';
             if (
-                game.blindActive &&
+                (game.blindActive || game.blindWarningActive) &&
                 game.blindStartRow !== null &&
                 LEVEL_CONFIG[game.level].mechanics.includes("blind") &&
                 r >= game.blindStartRow && r < blindEndRow
             ) {
-                cell.classList.add('blind-hidden');
+                if (game.blindActive) {
+                    cell.classList.add('blind-hidden');
+                } else {
+                    cell.classList.add('blind-warning');
+                    if (r === game.blindStartRow) {
+                        cell.classList.add('blind-warning-top');
+                    }
+                    if (r === blindEndRow - 1) {
+                        cell.classList.add('blind-warning-bottom');
+                    }
+                    if (c === 0) {
+                        cell.classList.add('blind-warning-left');
+                    }
+                    if (c === COLS - 1) {
+                        cell.classList.add('blind-warning-right');
+                    }
+                }
             }
 
             const cellValue = game.board[r][c];
@@ -1281,11 +1301,12 @@ function restartGameLoop() {
 
 function startBlindCycle() {
     game.blindActive = false;
+    game.blindWarningActive = false;
     game.blindStartRow = null;
     game.blindRemainingTime = 0;
     game.blindCyclePaused = false;
     game.blindNextTransitionAt = LEVEL_CONFIG[game.level].mechanics.includes("blind")
-        ? Date.now() + BLIND_VISIBLE_DURATION
+        ? Date.now() + BLIND_VISIBLE_DURATION - BLIND_WARNING_DURATION
         : 0;
 }
 
@@ -1299,10 +1320,20 @@ function updateBlindEffect() {
         return;
     }
 
-    game.blindActive = !game.blindActive;
-    game.blindStartRow = game.blindActive ? getRandomBlindStartRow() : null;
-    game.blindNextTransitionAt = Date.now() +
-        (game.blindActive ? BLIND_DURATION : BLIND_VISIBLE_DURATION);
+    if (game.blindActive) {
+        game.blindActive = false;
+        game.blindStartRow = null;
+        game.blindNextTransitionAt = Date.now() +
+            BLIND_VISIBLE_DURATION - BLIND_WARNING_DURATION;
+    } else if (game.blindWarningActive) {
+        game.blindWarningActive = false;
+        game.blindActive = true;
+        game.blindNextTransitionAt = Date.now() + BLIND_DURATION;
+    } else {
+        game.blindWarningActive = true;
+        game.blindStartRow = getRandomBlindStartRow();
+        game.blindNextTransitionAt = Date.now() + BLIND_WARNING_DURATION;
+    }
     render();
 }
 
@@ -1331,13 +1362,14 @@ function resumeBlindCycle() {
 }
 
 function stopBlindEffect() {
-    const wasBlindActive = game.blindActive;
+    const wasBlindVisible = game.blindActive || game.blindWarningActive;
     game.blindActive = false;
+    game.blindWarningActive = false;
     game.blindStartRow = null;
     game.blindNextTransitionAt = 0;
     game.blindRemainingTime = 0;
     game.blindCyclePaused = false;
-    if (wasBlindActive) {
+    if (wasBlindVisible) {
         renderBoard();
     }
 }
