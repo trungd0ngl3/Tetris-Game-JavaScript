@@ -165,6 +165,19 @@ body {
     background: #09142d;
 }
 
+#game-board td.blind-hidden:not(.active-piece) {
+    background: #101827 !important;
+    border-color: #101827 !important;
+    box-shadow: none !important;
+    color: transparent !important;
+    animation: none !important;
+}
+
+#game-board td.blind-hidden:not(.active-piece)::after,
+#game-board td.blind-hidden:not(.active-piece)::before {
+    content: none !important;
+}
+
 #game-board td.filled,
 #hold-board td.filled,
 #next-board td.filled {

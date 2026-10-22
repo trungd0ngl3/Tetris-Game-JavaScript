@@ -191,6 +191,16 @@ const LEVEL_CONFIG = {
             garbageRowsCleared: 5,
             elements: 10
         }
+    },
+
+    11: {
+        name: "Blind Challenge",
+        mechanics: ["blind"],
+        gravity: 700,
+        objectives: {
+            lines: 12,
+            blindLinesCleared: 6
+        }
     }
 };
 
@@ -198,13 +208,16 @@ const TARGET_BLOCK = 2
 const ROCK_BLOCK_2HP = 'rock-2hp';
 const ROCK_BLOCK_1HP = 'rock-1hp';
 const GARBAGE_BLOCK = 'garbage-block';
-const LOCKS_PER_GARBAGE_ROW = 4;
+const LOCKS_PER_GARBAGE_ROW = 8;
 const FIRE_IGNITION_DURATION = 100;
 const FIRE_BLAST_DURATION = 250;
 const ICE_DURATION = 3000;
 const ICE_FALL_MULTIPLIER = 0.5;
 const ICE_ACTIVATION_DURATION = 125;
 const LINE_FALL_SPEED_MULTIPLIER = 1.05;
+const BLIND_VISIBLE_DURATION = 5000;
+const BLIND_DURATION = 4000;
+const BLIND_ROW_COUNT = 6;
 
 const ROWS = 20;
 const COLS = 10;
@@ -239,7 +252,8 @@ const game = {
         targets: 0,
         obstacles: 0,
         elements: 0,
-        garbageRowsCleared: 0
+        garbageRowsCleared: 0,
+        blindLinesCleared: 0
     },
     completedLevels: [1,2,3,4,5,6,7,8,9,10],
     canHold: true,
@@ -253,7 +267,11 @@ const game = {
     iceAnimationEndTime: 0,
     animationId: 0,
     piecesLocked: 0,
-    garbageRowsSpawned: 0
+    garbageRowsSpawned: 0,
+    blindActive: false,
+    blindNextTransitionAt: 0,
+    blindRemainingTime: 0,
+    blindCyclePaused: false
 };
 
 // BOARD
@@ -353,12 +371,21 @@ function getElementType(block) {
 }
 
 function renderBoard() {
+    const blindStartRow = Math.floor((ROWS - Math.min(BLIND_ROW_COUNT, ROWS)) / 2);
+    const blindEndRow = blindStartRow + Math.min(BLIND_ROW_COUNT, ROWS);
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             const cell = gameBoard.rows[r].cells[c];
 
             cell.className = '';
             cell.style.background = '';
+            if (
+                game.blindActive &&
+                LEVEL_CONFIG[game.level].mechanics.includes("blind") &&
+                r >= blindStartRow && r < blindEndRow
+            ) {
+                cell.classList.add('blind-hidden');
+            }
 
             const cellValue = game.board[r][c];
             if (cellValue === 0) {
@@ -465,7 +492,7 @@ function renderPiece(piece) {
             }
             const cell = gameBoard.rows[boardRow].cells[boardCol];
 
-            cell.classList.add('filled');
+            cell.classList.add('filled', 'active-piece');
             const element = getElementType(piece.shape[r][c]);
             if (element) {
                 cell.classList.add(element.className);
@@ -596,6 +623,7 @@ function moveDown() {
     if (game.isAnimating || !game.currentPiece) {
         return;
     }
+    updateBlindEffect();
     if (canMove(game.currentPiece, game.currentPiece.row + 1, game.currentPiece.col)) {
         game.currentPiece.row++;
         render();
@@ -620,6 +648,7 @@ async function lockPiece() {
     if (game.isAnimating || !game.currentPiece) {
         return false;
     }
+    updateBlindEffect();
     placePiece();
     game.currentPiece = null;
     const clearAnimation = animatePendingClear();
@@ -728,6 +757,7 @@ function renderLevelSelect() {
 
 function completeLevel() {
     clearInterval(game.interval);
+    stopBlindEffect();
     game.state = GAME_STATES.LEVEL_COMPLETE;
     console.log(`Level ${game.level} Complete!`);
     if (!game.completedLevels.includes(game.level)) {
@@ -1004,6 +1034,9 @@ function clearLines() {
     const fullRows = game.board
         .map((row, index) => row.every(cell => cell !== 0) ? { row, index } : null)
         .filter(Boolean);
+    if (game.blindActive && LEVEL_CONFIG[game.level].mechanics.includes("blind")) {
+        game.objectives.blindLinesCleared += fullRows.length;
+    }
     game.objectives.garbageRowsCleared += fullRows.filter(
         ({ row }) => row.includes(GARBAGE_BLOCK)
     ).length;
@@ -1181,7 +1214,9 @@ function checkObjectives() {
         (config.objectives.obstacles === undefined || game.objectives.obstacles >= config.objectives.obstacles) &&
         (config.objectives.elements === undefined || game.objectives.elements >= config.objectives.elements) &&
         (config.objectives.garbageRowsCleared === undefined ||
-            game.objectives.garbageRowsCleared >= config.objectives.garbageRowsCleared);
+            game.objectives.garbageRowsCleared >= config.objectives.garbageRowsCleared) &&
+        (config.objectives.blindLinesCleared === undefined ||
+            game.objectives.blindLinesCleared >= config.objectives.blindLinesCleared);
     if (objectivesComplete) {
         completeLevel();
     }
@@ -1197,6 +1232,7 @@ function refreshObjectiveProgress() {
 }
 // GAME LOOP
 function gameOver() {
+    stopBlindEffect();
     game.state = GAME_STATES.GAME_OVER;
     clearInterval(game.interval);
     document.getElementById('final-score').textContent = `Score: ${game.score}`;
@@ -1207,6 +1243,7 @@ function gameOver() {
 function startGame() {
     resetGame();
     game.state = GAME_STATES.PLAYING;
+    startBlindCycle();
     updateGameUI(game.state);
     restartGameLoop();
 }
@@ -1215,18 +1252,21 @@ function pauseGame() {
     if (game.isAnimating) {
         return;
     }
+    pauseBlindCycle();
     clearInterval(game.interval);
     game.state = GAME_STATES.PAUSED;
     updateGameUI(game.state);
 }
 function resumeGame() {
     game.state = GAME_STATES.PLAYING;
+    resumeBlindCycle();
     updateGameUI(game.state);
     restartGameLoop();
 }
 
 function showMainMenu() {
     clearInterval(game.interval);
+    stopBlindEffect();
     game.state = GAME_STATES.READY;
     updateGameUI(game.state);
 }
@@ -1236,6 +1276,61 @@ function restartGameLoop() {
         clearInterval(game.interval);
     }
     game.interval = setInterval(moveDown, getCurrentFallInterval());
+}
+
+function startBlindCycle() {
+    game.blindActive = false;
+    game.blindRemainingTime = 0;
+    game.blindCyclePaused = false;
+    game.blindNextTransitionAt = LEVEL_CONFIG[game.level].mechanics.includes("blind")
+        ? Date.now() + BLIND_VISIBLE_DURATION
+        : 0;
+}
+
+function updateBlindEffect() {
+    if (
+        game.state !== GAME_STATES.PLAYING ||
+        !LEVEL_CONFIG[game.level].mechanics.includes("blind") ||
+        game.blindNextTransitionAt === 0 ||
+        Date.now() < game.blindNextTransitionAt
+    ) {
+        return;
+    }
+
+    game.blindActive = !game.blindActive;
+    game.blindNextTransitionAt = Date.now() +
+        (game.blindActive ? BLIND_DURATION : BLIND_VISIBLE_DURATION);
+    render();
+}
+
+function pauseBlindCycle() {
+    if (game.blindNextTransitionAt !== 0) {
+        game.blindRemainingTime = Math.max(0, game.blindNextTransitionAt - Date.now());
+        game.blindNextTransitionAt = 0;
+        game.blindCyclePaused = true;
+    }
+}
+
+function resumeBlindCycle() {
+    if (
+        LEVEL_CONFIG[game.level].mechanics.includes("blind") &&
+        game.blindCyclePaused
+    ) {
+        game.blindNextTransitionAt = Date.now() + game.blindRemainingTime;
+        game.blindRemainingTime = 0;
+        game.blindCyclePaused = false;
+    }
+}
+
+function stopBlindEffect() {
+    const wasBlindActive = game.blindActive;
+    game.blindActive = false;
+    game.blindNextTransitionAt = 0;
+    game.blindRemainingTime = 0;
+    game.blindCyclePaused = false;
+    if (wasBlindActive) {
+        renderBoard();
+    }
 }
 
 function getCurrentFallInterval() {
@@ -1264,10 +1359,12 @@ function resetGame() {
         targets: 0,
         obstacles: 0,
         elements: 0,
-        garbageRowsCleared: 0
+        garbageRowsCleared: 0,
+        blindLinesCleared: 0
     };
     game.piecesLocked = 0;
     game.garbageRowsSpawned = 0;
+    stopBlindEffect();
     game.level = game.selectedLevel || 1;
     game.holdPiece = null;
     game.canHold = true;

@@ -30,6 +30,7 @@ const OBJECTIVE_LABELS = {
     elements: "Elements",
     garbage: "Garbage",
     garbageRowsCleared: "Garbage rows",
+    blindLinesCleared: "Blind lines",
     blindEvents: "Blind events"
 };
 
