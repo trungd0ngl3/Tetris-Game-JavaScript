@@ -269,6 +269,7 @@ const game = {
     piecesLocked: 0,
     garbageRowsSpawned: 0,
     blindActive: false,
+    blindStartRow: null,
     blindNextTransitionAt: 0,
     blindRemainingTime: 0,
     blindCyclePaused: false
@@ -371,8 +372,7 @@ function getElementType(block) {
 }
 
 function renderBoard() {
-    const blindStartRow = Math.floor((ROWS - Math.min(BLIND_ROW_COUNT, ROWS)) / 2);
-    const blindEndRow = blindStartRow + Math.min(BLIND_ROW_COUNT, ROWS);
+    const blindEndRow = game.blindStartRow + Math.min(BLIND_ROW_COUNT, ROWS);
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             const cell = gameBoard.rows[r].cells[c];
@@ -381,8 +381,9 @@ function renderBoard() {
             cell.style.background = '';
             if (
                 game.blindActive &&
+                game.blindStartRow !== null &&
                 LEVEL_CONFIG[game.level].mechanics.includes("blind") &&
-                r >= blindStartRow && r < blindEndRow
+                r >= game.blindStartRow && r < blindEndRow
             ) {
                 cell.classList.add('blind-hidden');
             }
@@ -1280,6 +1281,7 @@ function restartGameLoop() {
 
 function startBlindCycle() {
     game.blindActive = false;
+    game.blindStartRow = null;
     game.blindRemainingTime = 0;
     game.blindCyclePaused = false;
     game.blindNextTransitionAt = LEVEL_CONFIG[game.level].mechanics.includes("blind")
@@ -1298,9 +1300,15 @@ function updateBlindEffect() {
     }
 
     game.blindActive = !game.blindActive;
+    game.blindStartRow = game.blindActive ? getRandomBlindStartRow() : null;
     game.blindNextTransitionAt = Date.now() +
         (game.blindActive ? BLIND_DURATION : BLIND_VISIBLE_DURATION);
     render();
+}
+
+function getRandomBlindStartRow() {
+    const blindRowCount = Math.min(BLIND_ROW_COUNT, ROWS);
+    return Math.floor(Math.random() * (ROWS - blindRowCount + 1));
 }
 
 function pauseBlindCycle() {
@@ -1325,6 +1333,7 @@ function resumeBlindCycle() {
 function stopBlindEffect() {
     const wasBlindActive = game.blindActive;
     game.blindActive = false;
+    game.blindStartRow = null;
     game.blindNextTransitionAt = 0;
     game.blindRemainingTime = 0;
     game.blindCyclePaused = false;
