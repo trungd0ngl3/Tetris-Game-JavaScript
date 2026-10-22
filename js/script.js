@@ -178,11 +178,18 @@ const LEVEL_CONFIG = {
     },
 
     10: {
-        name: "Boss",
-        mechanics: ["element", "garbage", "blind"],
+        name: "Elemental Garbage Storm",
+        mechanics: ["element", "garbage"],
+        elementTypes: [
+            ELEMENT_TYPES.FIRE.id,
+            ELEMENT_TYPES.ICE.id,
+            ELEMENT_TYPES.LIGHTNING.id
+        ],
         gravity: 700,
         objectives: {
-            lines: 10
+            lines: 15,
+            garbageRowsCleared: 5,
+            elements: 10
         }
     }
 };
@@ -191,7 +198,7 @@ const TARGET_BLOCK = 2
 const ROCK_BLOCK_2HP = 'rock-2hp';
 const ROCK_BLOCK_1HP = 'rock-1hp';
 const GARBAGE_BLOCK = 'garbage-block';
-const LOCKS_PER_GARBAGE_ROW = 6;
+const LOCKS_PER_GARBAGE_ROW = 4;
 const FIRE_IGNITION_DURATION = 100;
 const FIRE_BLAST_DURATION = 250;
 const ICE_DURATION = 3000;
@@ -849,7 +856,8 @@ function getPendingClearEffects() {
                         } else if (
                             block === ROCK_BLOCK_1HP ||
                             COLORS[block] ||
-                            getElementType(block)
+                            getElementType(block) ||
+                            block === GARBAGE_BLOCK
                         ) {
                             affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
                         }
@@ -923,7 +931,7 @@ function applyFireExplosion(cells, affectedPositions = new Set()) {
             game.board[row][col] = 0;
             game.objectives.obstacles++;
             affected.push({ row, col, kind: 'destroyed' });
-        } else if (COLORS[block] || getElementType(block)) {
+        } else if (COLORS[block] || getElementType(block) || block === GARBAGE_BLOCK) {
             affectedPositions.add(position);
             game.board[row][col] = 0;
             affected.push({ row, col, kind: 'destroyed' });
@@ -948,7 +956,7 @@ function applyLightningStrike(cells, affectedPositions = new Set()) {
         }
 
         const block = game.board[row][col];
-        if (!COLORS[block] && !getElementType(block)) {
+        if (!COLORS[block] && !getElementType(block) && block !== GARBAGE_BLOCK) {
             return;
         }
         affectedPositions.add(position);
