@@ -26,17 +26,17 @@ const selectedLevelObjectives = document.getElementById("selected-level-objectiv
 const objectiveProgressList = document.getElementById("objective-progress-list");
 
 const LEVEL_DESCRIPTIONS = {
-    1: "Xóa 5 hàng để hoàn thành màn chơi. Sắp xếp các khối thật khéo léo và đừng để bảng bị lấp đầy!",
-    2: "Xóa 10 hàng và đạt mục tiêu điểm số. Khối rơi nhanh hơn, hãy phản ứng thật nhanh!",
+    1: "Xóa 5 hàng để hoàn thành màn chơi.",
+    2: "Xóa 10 hàng. Khối rơi nhanh hơn, hãy thao tác thật nhanh!",
     3: "Xóa 8 hàng và phá hủy 5 Target Blocks bằng cách xóa các hàng chứa chúng.",
-    4: "Xóa các hàng và phá hủy vật cản để mở rộng không gian xếp khối.",
-    5: "Xóa 10 hàng và kích hoạt Fire 5 lần. Vụ nổ Fire phá hủy các khối trong vùng 3×3.",
-    6: "Xóa 10 hàng và kích hoạt Ice 5 lần. Ice làm chậm tốc độ rơi của khối trong thời gian ngắn.",
+    4: "Xóa 10 hàng và phá hủy 8 vật cản để hoàn thành màn chơi.",
+    5: "Xóa 10 hàng và kích hoạt Fire 5 lần. Vụ nổ phá hủy các khối trong vùng 3×3.",
+    6: "Xóa 10 hàng và kích hoạt Ice 5 lần. Ice tạm thời làm chậm tốc độ rơi của khối.",
     7: "Xóa 10 hàng và kích hoạt Lightning 5 lần. Tia sét phá hủy các khối theo cột dọc.",
-    8: "Xóa 12 hàng và kích hoạt 8 nguyên tố. Kết hợp Fire, Ice và Lightning để kiểm soát bảng chơi!",
-    9: "Xóa 10 hàng và loại bỏ 5 Garbage Rows. Đừng để những hàng rác đẩy bảng lên quá cao!",
-    10: "Xóa 15 hàng, loại bỏ 5 Garbage Rows và kích hoạt 10 nguyên tố. Tận dụng sức mạnh nguyên tố để chống lại Garbage!",
-    11: "Xóa 12 hàng và xóa 6 hàng khi Blind hoạt động. Ghi nhớ vị trí các khối khi bảng còn hiển thị!"
+    8: "Xóa 12 hàng và kích hoạt 8 nguyên tố. Kết hợp Fire, Ice và Lightning để vượt qua thử thách!",
+    9: "Xóa 10 hàng và dọn sạch 5 Garbage Rows. Đừng để các hàng rác đẩy bảng chơi lên quá cao!",
+    10: "Xóa 15 hàng, dọn sạch 5 Garbage Rows và kích hoạt 10 nguyên tố. Tận dụng sức mạnh nguyên tố để đối phó với Garbage!",
+    11: "Xóa 12 hàng, trong đó có ít nhất 6 hàng khi Blind hoạt động. Ghi nhớ vị trí các khối khi bảng chơi bị che khuất!"
 };
 
 const OBJECTIVE_LABELS = {

@@ -201,7 +201,25 @@ const LEVEL_CONFIG = {
             lines: 12,
             blindLinesCleared: 6
         }
-    }
+    },
+    
+    12: {
+        name: "Impossible Challenge",
+        mechanics: ["blind","element", "garbage"],
+        elementTypes: [
+            ELEMENT_TYPES.FIRE.id,
+            ELEMENT_TYPES.ICE.id,
+            ELEMENT_TYPES.LIGHTNING.id
+        ],
+        gravity: 700,
+        objectives: {
+            lines: 15,
+            blindLinesCleared: 6,
+            garbageRowsCleared: 5,
+            elements: 10
+        }
+    },
+
 };
 
 const TARGET_BLOCK = 2
@@ -256,7 +274,7 @@ const game = {
         garbageRowsCleared: 0,
         blindLinesCleared: 0
     },
-    completedLevels: [1,2,3,4,5,6,7,8,9,10],
+    completedLevels: [1,2,3,4,5,6,7,8,9,10,11,12],
     canHold: true,
     interval: null,
     pieceBag: [],
