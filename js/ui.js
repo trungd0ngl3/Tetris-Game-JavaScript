@@ -29,6 +29,7 @@ const OBJECTIVE_LABELS = {
     obstacles: "Obstacles",
     elements: "Elements",
     garbage: "Garbage",
+    garbageRowsCleared: "Garbage rows",
     blindEvents: "Blind events"
 };
 

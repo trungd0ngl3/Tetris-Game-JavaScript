@@ -168,11 +168,12 @@ const LEVEL_CONFIG = {
     },
 
     9: {
-        name: "Blind + Garbage",
-        mechanics: ["blind", "garbage"],
+        name: "Garbage Survival",
+        mechanics: ["garbage"],
         gravity: 700,
         objectives: {
-            lines: 10
+            lines: 10,
+            garbageRowsCleared: 5
         }
     },
 
@@ -189,6 +190,8 @@ const LEVEL_CONFIG = {
 const TARGET_BLOCK = 2
 const ROCK_BLOCK_2HP = 'rock-2hp';
 const ROCK_BLOCK_1HP = 'rock-1hp';
+const GARBAGE_BLOCK = 'garbage-block';
+const LOCKS_PER_GARBAGE_ROW = 5;
 const FIRE_IGNITION_DURATION = 100;
 const FIRE_BLAST_DURATION = 250;
 const ICE_DURATION = 3000;
@@ -228,7 +231,8 @@ const game = {
         lines: 0,
         targets: 0,
         obstacles: 0,
-        elements: 0
+        elements: 0,
+        garbageRowsCleared: 0
     },
     completedLevels: [1,2,3,4,5,6,7,8,9,10],
     canHold: true,
@@ -240,7 +244,9 @@ const game = {
     iceTimeout: null,
     iceAnimationPositions: [],
     iceAnimationEndTime: 0,
-    animationId: 0
+    animationId: 0,
+    piecesLocked: 0,
+    garbageRowsSpawned: 0
 };
 
 // BOARD
@@ -358,6 +364,8 @@ function renderBoard() {
                 cell.classList.add('obstacle');
                 cell.classList.add(cellValue === ROCK_BLOCK_2HP ? 'obstacle-2hp' : 'obstacle-1hp');
                 cell.dataset.hp = cellValue === ROCK_BLOCK_2HP ? '2' : '1';
+            } else if (cellValue === GARBAGE_BLOCK) {
+                cell.classList.add('garbage');
             } else if (getElementType(cellValue)) {
                 cell.classList.add(getElementType(cellValue).className);
             } else {
@@ -619,8 +627,20 @@ async function lockPiece() {
     }
     const linesCleared = clearLines();
 
+    const garbageEnabled = LEVEL_CONFIG[game.level].mechanics.includes("garbage");
+    if (garbageEnabled) {
+        game.piecesLocked++;
+    }
     updateScore(linesCleared);
     if (game.state === GAME_STATES.LEVEL_COMPLETE) {
+        render();
+        return false;
+    }
+    if (
+        garbageEnabled &&
+        game.piecesLocked % LOCKS_PER_GARBAGE_ROW === 0 &&
+        !spawnGarbageRow()
+    ) {
         render();
         return false;
     }
@@ -976,6 +996,9 @@ function clearLines() {
     const fullRows = game.board
         .map((row, index) => row.every(cell => cell !== 0) ? { row, index } : null)
         .filter(Boolean);
+    game.objectives.garbageRowsCleared += fullRows.filter(
+        ({ row }) => row.includes(GARBAGE_BLOCK)
+    ).length;
     const affectedPositions = new Set();
     const activatedElements = [];
     fullRows.forEach(({ row, index }) => {
@@ -1035,6 +1058,21 @@ function clearLines() {
     }
     spawnTargets();
     return linesCleared;
+}
+
+function spawnGarbageRow() {
+    if (game.board[0].some(cell => cell !== 0)) {
+        gameOver();
+        return false;
+    }
+
+    const gapCol = Math.floor(Math.random() * COLS);
+    const garbageRow = Array(COLS).fill(GARBAGE_BLOCK);
+    garbageRow[gapCol] = 0;
+    game.board.shift();
+    game.board.push(garbageRow);
+    game.garbageRowsSpawned++;
+    return true;
 }
 
 function rotatePiece(piece) {
@@ -1133,7 +1171,9 @@ function checkObjectives() {
         (config.objectives.lines === undefined || game.objectives.lines >= config.objectives.lines) &&
         (config.objectives.targets === undefined || game.objectives.targets >= config.objectives.targets) &&
         (config.objectives.obstacles === undefined || game.objectives.obstacles >= config.objectives.obstacles) &&
-        (config.objectives.elements === undefined || game.objectives.elements >= config.objectives.elements);
+        (config.objectives.elements === undefined || game.objectives.elements >= config.objectives.elements) &&
+        (config.objectives.garbageRowsCleared === undefined ||
+            game.objectives.garbageRowsCleared >= config.objectives.garbageRowsCleared);
     if (objectivesComplete) {
         completeLevel();
     }
@@ -1215,8 +1255,11 @@ function resetGame() {
         lines: 0,
         targets: 0,
         obstacles: 0,
-        elements: 0
+        elements: 0,
+        garbageRowsCleared: 0
     };
+    game.piecesLocked = 0;
+    game.garbageRowsSpawned = 0;
     game.level = game.selectedLevel || 1;
     game.holdPiece = null;
     game.canHold = true;

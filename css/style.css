@@ -215,6 +215,18 @@ body {
     border: 2px solid #e1b49b;
 }
 
+#game-board td.garbage {
+    background: repeating-linear-gradient(
+        135deg,
+        #626a73 0,
+        #626a73 5px,
+        #454b52 5px,
+        #454b52 10px
+    );
+    border: 2px solid #929aa3;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.16);
+}
+
 #game-board td.fire-activating {
     position: relative;
     z-index: 1;
