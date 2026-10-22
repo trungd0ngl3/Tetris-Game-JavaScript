@@ -153,11 +153,17 @@ const LEVEL_CONFIG = {
     },
 
     8: {
-        name: "Element + Garbage",
-        mechanics: ["element", "garbage"],
+        name: "Elemental Chaos",
+        mechanics: ["element"],
+        elementTypes: [
+            ELEMENT_TYPES.FIRE.id,
+            ELEMENT_TYPES.ICE.id,
+            ELEMENT_TYPES.LIGHTNING.id
+        ],
         gravity: 700,
         objectives: {
-            lines: 10
+            lines: 12,
+            elements: 8
         }
     },
 
@@ -851,45 +857,59 @@ function animatePendingClear() {
     );
 }
 
-function activateElement(elementType, row, col, affectedPositions = new Set()) {
+function activateElement(elementType, row, col, affectedPositions = new Set(), cells = null) {
     switch (elementType) {
         case ELEMENT_TYPES.ICE.id:
             activateIce(row, col);
             return [];
         case ELEMENT_TYPES.FIRE.id: {
-            const affected = [];
-            for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
-                for (let blastCol = Math.max(0, col - 1); blastCol <= Math.min(COLS - 1, col + 1); blastCol++) {
-                    const position = `${blastRow},${blastCol}`;
-                    if (affectedPositions.has(position)) {
-                        continue;
-                    }
-                    affectedPositions.add(position);
-
-                    const block = game.board[blastRow][blastCol];
-                    if (block === ROCK_BLOCK_2HP) {
-                        game.board[blastRow][blastCol] = ROCK_BLOCK_1HP;
-                        affected.push({ row: blastRow, col: blastCol, kind: 'obstacle-damaged' });
-                    } else if (block === ROCK_BLOCK_1HP) {
-                        game.board[blastRow][blastCol] = 0;
-                        game.objectives.obstacles++;
-                        affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
-                    } else if (COLORS[block]) {
-                        game.board[blastRow][blastCol] = 0;
-                        affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
-                    } else if (getElementType(block)) {
-                        game.board[blastRow][blastCol] = 0;
-                        affected.push({ row: blastRow, col: blastCol, kind: 'destroyed' });
-                    }
-                }
-            }
-            return affected;
+            return applyFireExplosion(cells || getFireExplosionCells(row, col), affectedPositions);
         }
         case ELEMENT_TYPES.LIGHTNING.id:
-            return applyLightningStrike(getLightningStrikeCells(row, col), affectedPositions);
+            return applyLightningStrike(cells || getLightningStrikeCells(row, col), affectedPositions);
         default:
             throw new Error(`Element effect is not implemented: ${elementType}`);
     }
+}
+
+function getFireExplosionCells(row, col) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+        return [];
+    }
+    const cells = [];
+    for (let blastRow = Math.max(0, row - 1); blastRow <= Math.min(ROWS - 1, row + 1); blastRow++) {
+        for (let blastCol = Math.max(0, col - 1); blastCol <= Math.min(COLS - 1, col + 1); blastCol++) {
+            cells.push({ row: blastRow, col: blastCol });
+        }
+    }
+    return cells;
+}
+
+function applyFireExplosion(cells, affectedPositions = new Set()) {
+    const affected = [];
+    cells.forEach(({ row, col }) => {
+        const position = `${row},${col}`;
+        if (affectedPositions.has(position)) {
+            return;
+        }
+
+        const block = game.board[row][col];
+        if (block === ROCK_BLOCK_2HP) {
+            affectedPositions.add(position);
+            game.board[row][col] = ROCK_BLOCK_1HP;
+            affected.push({ row, col, kind: 'obstacle-damaged' });
+        } else if (block === ROCK_BLOCK_1HP) {
+            affectedPositions.add(position);
+            game.board[row][col] = 0;
+            game.objectives.obstacles++;
+            affected.push({ row, col, kind: 'destroyed' });
+        } else if (COLORS[block] || getElementType(block)) {
+            affectedPositions.add(position);
+            game.board[row][col] = 0;
+            affected.push({ row, col, kind: 'destroyed' });
+        }
+    });
+    return affected;
 }
 
 function getLightningStrikeCells(row, col) {
@@ -906,12 +926,12 @@ function applyLightningStrike(cells, affectedPositions = new Set()) {
         if (affectedPositions.has(position)) {
             return;
         }
-        affectedPositions.add(position);
 
         const block = game.board[row][col];
-        if (!COLORS[block] && block !== ELEMENT_TYPES.LIGHTNING.block) {
+        if (!COLORS[block] && !getElementType(block)) {
             return;
         }
+        affectedPositions.add(position);
         game.board[row][col] = 0;
         affected.push({ row, col, kind: 'destroyed' });
     });
@@ -953,35 +973,38 @@ function updateIceEffect() {
 function clearLines() {
     let linesCleared = 0;
     let obstaclesDestroyed = 0;
-    const fullRows = game.board.filter(row => row.every(cell => cell !== 0));
-
-    const elementsByRow = new Map();
+    const fullRows = game.board
+        .map((row, index) => row.every(cell => cell !== 0) ? { row, index } : null)
+        .filter(Boolean);
+    const affectedPositions = new Set();
     const activatedElements = [];
-    const affectedFirePositions = new Set();
-    const affectedLightningPositions = new Set();
-    fullRows.forEach(row => {
-        const rowIndex = game.board.indexOf(row);
+    fullRows.forEach(({ row, index }) => {
         row.forEach((cell, col) => {
             const element = getElementType(cell);
             if (!element) {
                 return;
             }
 
-            activatedElements.push({ type: element.id, block: cell, row: rowIndex, rowData: row, col });
+            activatedElements.push({
+                type: element.id,
+                row: index,
+                col,
+                cells: element.id === ELEMENT_TYPES.FIRE.id
+                    ? getFireExplosionCells(index, col)
+                    : element.id === ELEMENT_TYPES.LIGHTNING.id
+                        ? getLightningStrikeCells(index, col)
+                        : []
+            });
         });
     });
-    activatedElements.forEach(({ type, block, row, rowData, col }) => {
-        elementsByRow.set(rowData, (elementsByRow.get(rowData) || 0) + 1);
-        const affectedPositions = type === ELEMENT_TYPES.LIGHTNING.id
-            ? affectedLightningPositions
-            : affectedFirePositions;
-        activateElement(type, row, col, affectedPositions);
+    activatedElements.forEach(({ type, row, col, cells }) => {
+        activateElement(type, row, col, affectedPositions, cells);
     });
+    game.objectives.elements += activatedElements.length;
 
     for (let i = fullRows.length - 1; i >= 0; i--) {
-        const row = fullRows[i];
-        const r = game.board.indexOf(row);
-        game.objectives.elements += elementsByRow.get(row) || 0;
+        const { row } = fullRows[i];
+        const index = game.board.indexOf(row);
         const targetsInLine = row
             .filter(cell => cell === TARGET_BLOCK)
             .length;
@@ -1001,7 +1024,7 @@ function clearLines() {
         });
 
         if (survivingObstacles === 0) {
-            game.board.splice(r, 1);
+            game.board.splice(index, 1);
             game.board.unshift(Array(COLS).fill(0));
         }
         linesCleared++;
